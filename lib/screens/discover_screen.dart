@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/dating_profile.dart';
+
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
 
@@ -9,45 +11,91 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  final List<Map<String, dynamic>> _profiles = [
-    {
-      'name': 'Sophie',
-      'age': 27,
-      'city': 'Paris',
-      'bio':
+  final List<DatingProfile> _profiles = const [
+    DatingProfile(
+      id: 'profile_1',
+      name: 'Sophie',
+      age: 27,
+      city: 'Paris',
+      bio:
           'J’aime les voyages, la musique et les soirées tranquilles.',
-      'emoji': '👩🏻',
-    },
-    {
-      'name': 'Emma',
-      'age': 29,
-      'city': 'Lyon',
-      'bio':
+      emoji: '👩🏻',
+      interests: [
+        '🎵 Musique',
+        '✈️ Voyage',
+        '☕ Sorties tranquilles',
+      ],
+      verified: true,
+    ),
+
+    DatingProfile(
+      id: 'profile_2',
+      name: 'Emma',
+      age: 29,
+      city: 'Lyon',
+      bio:
           'Curieuse, souriante et toujours partante pour découvrir.',
-      'emoji': '👩🏼',
-    },
-    {
-      'name': 'Camille',
-      'age': 25,
-      'city': 'Marseille',
-      'bio':
+      emoji: '👩🏼',
+      interests: [
+        '🎬 Films',
+        '🍳 Cuisine',
+        '🎨 Art',
+      ],
+      verified: true,
+    ),
+
+    DatingProfile(
+      id: 'profile_3',
+      name: 'Aïcha',
+      age: 26,
+      city: 'Marseille',
+      bio:
+          'J’aime les discussions sincères, la cuisine et les voyages.',
+      emoji: '👩🏿',
+      interests: [
+        '🍳 Cuisine',
+        '✈️ Voyage',
+        '📚 Lecture',
+      ],
+      verified: true,
+    ),
+
+    DatingProfile(
+      id: 'profile_4',
+      name: 'Camille',
+      age: 25,
+      city: 'Bordeaux',
+      bio:
           'Cinéma, cuisine et longues discussions autour d’un café.',
-      'emoji': '👩🏽',
-    },
-    {
-      'name': 'Julie',
-      'age': 28,
-      'city': 'Bordeaux',
-      'bio':
+      emoji: '👩🏽',
+      interests: [
+        '🎬 Films',
+        '🍳 Cuisine',
+        '☕ Sorties tranquilles',
+      ],
+      verified: false,
+    ),
+
+    DatingProfile(
+      id: 'profile_5',
+      name: 'Julie',
+      age: 28,
+      city: 'Toulouse',
+      bio:
           'J’adore les balades, les voyages et les conversations sincères.',
-      'emoji': '👩🏻',
-    },
+      emoji: '👩🏻',
+      interests: [
+        '✈️ Voyage',
+        '🐾 Animaux',
+        '🎵 Musique',
+      ],
+      verified: true,
+    ),
   ];
 
   int _currentIndex = 0;
 
   void _passProfile() {
-    _showActionMessage('Profil passé');
     _nextProfile();
   }
 
@@ -57,22 +105,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Tu as aimé ${profile['name']} ❤️',
+          'Tu as aimé ${profile.name} ❤️',
         ),
         duration: const Duration(seconds: 2),
       ),
     );
 
     _nextProfile();
-  }
-
-  void _showActionMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 1),
-      ),
-    );
   }
 
   void _nextProfile() {
@@ -106,15 +145,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 child: Column(
                   children: [
                     Expanded(
-                      flex: 6,
+                      flex: 5,
                       child: Container(
                         width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.pink.shade50,
-                        ),
+                        color: Colors.pink.shade50,
                         child: Center(
                           child: Text(
-                            profile['emoji'],
+                            profile.emoji,
                             style: const TextStyle(
                               fontSize: 115,
                             ),
@@ -124,67 +161,96 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     ),
 
                     Expanded(
-                      flex: 4,
+                      flex: 5,
                       child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '${profile['name']}, '
-                                    '${profile['age']}',
-                                    style: const TextStyle(
-                                      fontSize: 27,
-                                      fontWeight:
-                                          FontWeight.bold,
+                        padding: const EdgeInsets.all(18),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${profile.name}, '
+                                      '${profile.age}',
+                                      style: const TextStyle(
+                                        fontSize: 27,
+                                        fontWeight:
+                                            FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Icon(
-                                  Icons.verified,
-                                  color: Colors.pink.shade400,
-                                ),
-                              ],
-                            ),
 
-                            const SizedBox(height: 6),
-
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.location_on_outlined,
-                                  size: 18,
-                                  color: Colors.grey.shade600,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  profile['city'],
-                                  style: TextStyle(
-                                    color:
-                                        Colors.grey.shade700,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 14),
-
-                            Text(
-                              profile['bio'],
-                              maxLines: 3,
-                              overflow:
-                                  TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                height: 1.4,
+                                  if (profile.verified)
+                                    Icon(
+                                      Icons.verified,
+                                      color:
+                                          Colors.pink.shade400,
+                                    ),
+                                ],
                               ),
-                            ),
-                          ],
+
+                              const SizedBox(height: 6),
+
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    size: 18,
+                                    color:
+                                        Colors.grey.shade600,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    profile.city,
+                                    style: TextStyle(
+                                      color:
+                                          Colors.grey.shade700,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 14),
+
+                              Text(
+                                profile.bio,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  height: 1.4,
+                                ),
+                              ),
+
+                              const SizedBox(height: 14),
+
+                              const Text(
+                                'Centres d’intérêt',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: profile.interests
+                                    .map(
+                                      (interest) => Chip(
+                                        label:
+                                            Text(interest),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
