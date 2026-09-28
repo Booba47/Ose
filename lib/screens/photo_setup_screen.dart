@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
+
+import '../models/user_profile.dart';
 import 'home_screen.dart';
 
 class PhotoSetupScreen extends StatefulWidget {
-  const PhotoSetupScreen({super.key});
+  final UserProfile profile;
+
+  const PhotoSetupScreen({
+    super.key,
+    required this.profile,
+  });
 
   @override
-  State<PhotoSetupScreen> createState() => _PhotoSetupScreenState();
+  State<PhotoSetupScreen> createState() =>
+      _PhotoSetupScreenState();
 }
 
 class _PhotoSetupScreenState extends State<PhotoSetupScreen> {
@@ -32,7 +40,9 @@ class _PhotoSetupScreenState extends State<PhotoSetupScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-        builder: (_) => const HomeScreen(),
+        builder: (_) => HomeScreen(
+          profile: widget.profile,
+        ),
       ),
       (route) => false,
     );
@@ -75,7 +85,8 @@ class _PhotoSetupScreenState extends State<PhotoSetupScreen> {
 
               GridView.builder(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+                physics:
+                    const NeverScrollableScrollPhysics(),
                 itemCount: _photos.length,
                 gridDelegate:
                     const SliverGridDelegateWithFixedCrossAxisCount(
@@ -92,7 +103,8 @@ class _PhotoSetupScreenState extends State<PhotoSetupScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.pink.shade50,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius:
+                            BorderRadius.circular(18),
                         border: Border.all(
                           color: Colors.pink.shade100,
                         ),
@@ -105,17 +117,21 @@ class _PhotoSetupScreenState extends State<PhotoSetupScreen> {
                                 Icon(
                                   Icons.add_a_photo_outlined,
                                   size: 42,
-                                  color: Colors.pink.shade400,
+                                  color:
+                                      Colors.pink.shade400,
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
                                   index == 0
                                       ? 'Photo principale'
                                       : 'Ajouter une photo',
-                                  textAlign: TextAlign.center,
+                                  textAlign:
+                                      TextAlign.center,
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.pink.shade700,
+                                    fontWeight:
+                                        FontWeight.w600,
+                                    color:
+                                        Colors.pink.shade700,
                                   ),
                                 ),
                               ],
