@@ -33,4 +33,13 @@ class MatchService {
   static void clear() {
     _matchedProfileIds.clear();
   }
+
+  // Matchs de démonstration utilisés avant
+  // la connexion à Firebase.
+  static void initializeDemoMatches() {
+    _matchedProfileIds.addAll([
+      'profile_1',
+      'profile_3',
+    ]);
+  }
 }
