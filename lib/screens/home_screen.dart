@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'discover_screen.dart';
+import 'messages_screen.dart';
+import 'matches_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,18 +14,18 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    DiscoverScreen(),
-    _MessagesPage(),
-    _MatchesPage(),
-    _ProfilePage(),
-  ];
-
   final List<String> _titles = [
     'Découvrir',
     'Messages',
     'Matchs',
     'Mon profil',
+  ];
+
+  final List<Widget> _pages = const [
+    DiscoverScreen(),
+    MessagesScreen(),
+    MatchesScreen(),
+    _ProfilePage(),
   ];
 
   void _onTabSelected(int index) {
@@ -78,79 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _MessagesPage extends StatelessWidget {
-  const _MessagesPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 70,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 20),
-          Text(
-            'Tes conversations',
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Tes messages apparaîtront ici.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MatchesPage extends StatelessWidget {
-  const _MatchesPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.favorite_border,
-            size: 70,
-            color: Colors.pink,
-          ),
-          SizedBox(height: 20),
-          Text(
-            'Tes Matchs',
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Quand quelqu’un t’aime aussi, '
-            'votre Match apparaîtra ici.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ProfilePage extends StatelessWidget {
   const _ProfilePage();
 
@@ -160,6 +89,8 @@ class _ProfilePage extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
+          const SizedBox(height: 20),
+
           const CircleAvatar(
             radius: 55,
             child: Icon(
@@ -190,27 +121,45 @@ class _ProfilePage extends StatelessWidget {
           const SizedBox(height: 30),
 
           ListTile(
-            leading: const Icon(Icons.edit_outlined),
-            title: const Text('Modifier mon profil'),
-            trailing: const Icon(Icons.chevron_right),
+            leading: const Icon(
+              Icons.edit_outlined,
+            ),
+            title: const Text(
+              'Modifier mon profil',
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
             onTap: () {},
           ),
 
           const Divider(),
 
           ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: const Text('Paramètres'),
-            trailing: const Icon(Icons.chevron_right),
+            leading: const Icon(
+              Icons.settings_outlined,
+            ),
+            title: const Text(
+              'Paramètres',
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
             onTap: () {},
           ),
 
           const Divider(),
 
           ListTile(
-            leading: const Icon(Icons.security_outlined),
-            title: const Text('Sécurité et confidentialité'),
-            trailing: const Icon(Icons.chevron_right),
+            leading: const Icon(
+              Icons.security_outlined,
+            ),
+            title: const Text(
+              'Sécurité et confidentialité',
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
             onTap: () {},
           ),
         ],
