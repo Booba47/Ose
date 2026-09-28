@@ -19,6 +19,7 @@ class OseApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.pink,
         ),
+        scaffoldBackgroundColor: Colors.white,
       ),
       home: const WelcomeScreen(),
     );
