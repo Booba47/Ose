@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'profile_setup_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -106,7 +107,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const ProfileSetupScreen(),
+        builder: (_) => ProfileSetupScreen(
+          name: _nameController.text.trim(),
+          birthDate: _birthDate!,
+        ),
       ),
     );
   }
@@ -123,7 +127,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 const Center(
                   child: Text(
@@ -162,7 +167,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 TextFormField(
                   controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
+                  textCapitalization:
+                      TextCapitalization.words,
                   decoration: const InputDecoration(
                     hintText: 'Ex. Alex',
                     prefixIcon: Icon(
@@ -230,7 +236,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 TextFormField(
                   controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
+                  keyboardType:
+                      TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     hintText: 'Ex. alex@email.com',
                     prefixIcon: Icon(
@@ -314,7 +321,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   onChanged: (value) {
                     setState(() {
-                      _acceptedTerms = value ?? false;
+                      _acceptedTerms =
+                          value ?? false;
                     });
                   },
                 ),
@@ -340,6 +348,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 Center(
                   child: Text(
+                    'Ose est réservé aux personnes de 18 ans et plus.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}             child: Text(
                     'Ose est réservé aux personnes de 18 ans et plus.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
