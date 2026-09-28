@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../models/user_profile.dart';
 import 'discover_screen.dart';
 import 'messages_screen.dart';
 import 'matches_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final UserProfile profile;
+
+  const HomeScreen({
+    super.key,
+    required this.profile,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -15,45 +21,47 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<String> _titles = [
-    'Découvrir',
-    'Messages',
-    'Matchs',
-    'Mon profil',
-  ];
-
-  final List<Widget> _pages = const [
-    DiscoverScreen(),
-    MessagesScreen(),
-    MatchesScreen(),
-    ProfileScreen(),
-  ];
-
-  void _onTabSelected(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final List<String> titles = [
+      'Découvrir',
+      'Messages',
+      'Matchs',
+      'Mon profil',
+    ];
+
+    final List<Widget> pages = [
+      const DiscoverScreen(),
+      const MessagesScreen(),
+      const MatchesScreen(),
+      ProfileScreen(
+        profile: widget.profile,
+      ),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _titles[_currentIndex],
+          titles[_currentIndex],
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
       ),
+
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: pages,
       ),
+
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: _onTabSelected,
+        onDestinationSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.favorite_border),
