@@ -31,4 +31,32 @@ class UserProfile {
 
     return calculatedAge;
   }
+
+  UserProfile copyWith({
+    String? name,
+    DateTime? birthDate,
+    String? city,
+    String? bio,
+    List<String>? interests,
+    String? lookingFor,
+    List<String>? photos,
+  }) {
+    return UserProfile(
+      name: name ?? this.name,
+      birthDate: birthDate ?? this.birthDate,
+      city: city ?? this.city,
+      bio: bio ?? this.bio,
+      interests: interests ?? this.interests,
+      lookingFor: lookingFor ?? this.lookingFor,
+      photos: photos ?? this.photos,
+    );
+  }
+
+  String? get primaryPhoto {
+    if (photos.isEmpty) {
+      return null;
+    }
+
+    return photos.first;
+  }
 }
