@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+import 'register_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -71,7 +73,14 @@ class WelcomeScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const RegisterScreen(),
+                      ),
+                    );
+                  },
                   child: const Text(
                     'Créer mon compte',
                     style: TextStyle(
@@ -88,7 +97,15 @@ class WelcomeScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 55,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'La connexion sera ajoutée prochainement.',
+                        ),
+                      ),
+                    );
+                  },
                   child: const Text(
                     "J'ai déjà un compte",
                     style: TextStyle(fontSize: 17),
