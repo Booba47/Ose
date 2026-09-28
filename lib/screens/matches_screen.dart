@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class MessagesScreen extends StatelessWidget {
-  const MessagesScreen({super.key});
+class MatchesScreen extends StatelessWidget {
+  const MatchesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,15 +13,15 @@ class MessagesScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             const Icon(
-              Icons.chat_bubble,
-              size: 75,
+              Icons.favorite,
+              size: 80,
               color: Colors.pink,
             ),
 
             const SizedBox(height: 20),
 
             const Text(
-              'Mes messages 💬',
+              'Tes Matchs ❤️',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 28,
@@ -32,8 +32,8 @@ class MessagesScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             Text(
-              'Tes conversations avec tes Matchs '
-              'apparaîtront ici.',
+              'Quand quelqu’un t’aime aussi, '
+              'vous aurez un Match.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
@@ -50,7 +50,7 @@ class MessagesScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.forum_outlined,
+                      Icons.people_outline,
                       size: 70,
                       color: Colors.grey.shade400,
                     ),
@@ -58,7 +58,7 @@ class MessagesScreen extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     const Text(
-                      'Aucune conversation',
+                      'Pas encore de Match',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -68,8 +68,8 @@ class MessagesScreen extends StatelessWidget {
                     const SizedBox(height: 8),
 
                     Text(
-                      'Quand tu auras un Match, '
-                      'vous pourrez commencer à discuter.',
+                      'Continue à découvrir des profils.\n'
+                      'Ton prochain Match est peut-être tout proche.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.grey.shade600,
