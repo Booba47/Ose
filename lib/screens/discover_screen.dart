@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/dating_profile.dart';
 import '../services/dating_profile_service.dart';
+import '../services/like_service.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -24,22 +25,36 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   void _passProfile() {
+    final profile = _profiles[_currentIndex];
+
+    LikeService.passProfile(profile);
+
+    _showMessage(
+      'Profil passé',
+    );
+
     _nextProfile();
   }
 
   void _likeProfile() {
     final profile = _profiles[_currentIndex];
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Tu as aimé ${profile.name} ❤️',
-        ),
-        duration: const Duration(seconds: 2),
-      ),
+    LikeService.likeProfile(profile);
+
+    _showMessage(
+      'Tu as aimé ${profile.name} ❤️',
     );
 
     _nextProfile();
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _nextProfile() {
@@ -265,7 +280,9 @@ class _ActionButton extends StatelessWidget {
             ),
           ),
         ),
+
         const SizedBox(height: 6),
+
         Text(
           label,
           style: const TextStyle(
