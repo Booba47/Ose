@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../models/user_profile.dart';
+
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final UserProfile profile;
+
+  const ProfileScreen({
+    super.key,
+    required this.profile,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +18,6 @@ class ProfileScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 20),
 
-          // Photo de profil
           const CircleAvatar(
             radius: 65,
             child: Icon(
@@ -22,10 +28,10 @@ class ProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 18),
 
-          // Nom
-          const Text(
-            'Mon profil',
-            style: TextStyle(
+          Text(
+            '${profile.name}, ${profile.age} ans',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
@@ -33,7 +39,6 @@ class ProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // Ville
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -44,7 +49,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'Ma ville',
+                profile.city,
                 style: TextStyle(
                   color: Colors.grey.shade700,
                   fontSize: 15,
@@ -55,7 +60,6 @@ class ProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Présentation
           Card(
             child: Padding(
               padding: const EdgeInsets.all(18),
@@ -74,9 +78,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   Text(
-                    'Ta présentation apparaîtra ici. '
-                    'Tu pourras expliquer qui tu es, '
-                    'ce que tu aimes et ce que tu recherches.',
+                    profile.bio,
                     style: TextStyle(
                       color: Colors.grey.shade700,
                       height: 1.5,
@@ -89,7 +91,6 @@ class ProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Centres d'intérêt
           Card(
             child: Padding(
               padding: const EdgeInsets.all(18),
@@ -110,29 +111,38 @@ class ProfileScreen extends StatelessWidget {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: const [
-                      Chip(
-                        label: Text('🎵 Musique'),
-                      ),
-                      Chip(
-                        label: Text('🎬 Films'),
-                      ),
-                      Chip(
-                        label: Text('✈️ Voyage'),
-                      ),
-                      Chip(
-                        label: Text('☕ Sorties'),
-                      ),
-                    ],
+                    children: profile.interests.map((interest) {
+                      return Chip(
+                        label: Text(interest),
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
             ),
           ),
 
+          const SizedBox(height: 16),
+
+          Card(
+            child: ListTile(
+              leading: const Icon(
+                Icons.favorite_outline,
+              ),
+              title: const Text(
+                'Ce que je recherche',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                profile.lookingFor,
+              ),
+            ),
+          ),
+
           const SizedBox(height: 20),
 
-          // Modifier le profil
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -162,7 +172,6 @@ class ProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Paramètres
           ListTile(
             leading: const Icon(
               Icons.settings_outlined,
@@ -187,7 +196,6 @@ class ProfileScreen extends StatelessWidget {
 
           const Divider(),
 
-          // Sécurité
           ListTile(
             leading: const Icon(
               Icons.security_outlined,
