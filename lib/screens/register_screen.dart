@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'profile_setup_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -30,28 +30,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _selectBirthDate() async {
     final now = DateTime.now();
 
-    final selected = await showDatePicker(
+    final pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime(now.year - 25),
-      firstDate: DateTime(1920),
+      initialDate: DateTime(
+        now.year - 25,
+        now.month,
+        now.day,
+      ),
+      firstDate: DateTime(1900),
       lastDate: now,
       helpText: 'Choisis ta date de naissance',
+      cancelText: 'Annuler',
+      confirmText: 'Valider',
     );
 
-    if (selected != null && mounted) {
+    if (pickedDate != null) {
       setState(() {
-        _birthDate = selected;
+        _birthDate = pickedDate;
       });
     }
   }
 
   int _calculateAge(DateTime birthDate) {
-    final now = DateTime.now();
-    int age = now.year - birthDate.year;
+    final today = DateTime.now();
 
-    if (now.month < birthDate.month ||
-        (now.month == birthDate.month &&
-            now.day < birthDate.day)) {
+    int age = today.year - birthDate.year;
+
+    if (today.month < birthDate.month ||
+        (today.month == birthDate.month &&
+            today.day < birthDate.day)) {
       age--;
     }
 
@@ -59,12 +66,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _continueRegistration() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     if (_birthDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Choisis ta date de naissance.'),
+          content: Text(
+            'Choisis ta date de naissance.',
+          ),
         ),
       );
       return;
@@ -92,11 +103,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Formulaire validé ! La connexion sera ajoutée ensuite.',
-        ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ProfileSetupScreen(),
       ),
     );
   }
@@ -108,18 +118,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: const Text('Créer mon compte'),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Center(
                   child: Text(
-                    'Fais le premier pas ❤️',
+                    'Bienvenue sur Ose ❤️',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 25,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -129,9 +140,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 Center(
                   child: Text(
-                    'Quelques informations pour commencer.',
+                    'Créons ton profil en quelques étapes.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
+                      fontSize: 16,
                       color: Colors.grey.shade700,
                     ),
                   ),
@@ -139,7 +151,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 30),
 
-                const Text('Ton prénom ou pseudo'),
+                const Text(
+                  'Nom ou pseudo',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
                 const SizedBox(height: 8),
 
@@ -148,78 +165,118 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     hintText: 'Ex. Alex',
-                    prefixIcon: Icon(Icons.person_outline),
+                    prefixIcon: Icon(
+                      Icons.person_outline,
+                    ),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().length < 2) {
-                      return 'Entre un prénom ou pseudo valide.';
+                    if (value == null ||
+                        value.trim().length < 2) {
+                      return 'Entre au moins 2 caractères.';
                     }
+
                     return null;
                   },
                 ),
 
                 const SizedBox(height: 20),
 
-                const Text('Ta date de naissance'),
+                const Text(
+                  'Date de naissance',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
                 const SizedBox(height: 8),
 
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _selectBirthDate,
-                    icon: const Icon(Icons.calendar_month),
-                    label: Text(
+                InkWell(
+                  onTap: _selectBirthDate,
+                  borderRadius: BorderRadius.circular(4),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(
+                        Icons.cake_outlined,
+                      ),
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Text(
                       _birthDate == null
                           ? 'Choisir ma date de naissance'
                           : '${_birthDate!.day.toString().padLeft(2, '0')}/'
-                            '${_birthDate!.month.toString().padLeft(2, '0')}/'
-                            '${_birthDate!.year}',
+                              '${_birthDate!.month.toString().padLeft(2, '0')}/'
+                              '${_birthDate!.year}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: _birthDate == null
+                            ? Colors.grey.shade600
+                            : Colors.black,
+                      ),
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 20),
 
-                const Text('Ton adresse email'),
+                const Text(
+                  'Adresse e-mail',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
                 const SizedBox(height: 8),
 
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
                   decoration: const InputDecoration(
-                    hintText: 'exemple@email.com',
-                    prefixIcon: Icon(Icons.email_outlined),
+                    hintText: 'Ex. alex@email.com',
+                    prefixIcon: Icon(
+                      Icons.email_outlined,
+                    ),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    final email = value?.trim() ?? '';
-                    if (!RegExp(
-                      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                    ).hasMatch(email)) {
-                      return 'Entre une adresse email valide.';
+                    if (value == null ||
+                        value.trim().isEmpty) {
+                      return 'Entre ton adresse e-mail.';
                     }
+
+                    final emailRegex = RegExp(
+                      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                    );
+
+                    if (!emailRegex.hasMatch(
+                      value.trim(),
+                    )) {
+                      return 'Entre une adresse e-mail valide.';
+                    }
+
                     return null;
                   },
                 ),
 
                 const SizedBox(height: 20),
 
-                const Text('Choisis un mot de passe'),
+                const Text(
+                  'Mot de passe',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
                 const SizedBox(height: 8),
 
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _hidePassword,
-                  autocorrect: false,
                   decoration: InputDecoration(
-                    hintText: '6 caractères minimum',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: const OutlineInputBorder(),
+                    hintText: 'Minimum 6 caractères',
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                    ),
                     suffixIcon: IconButton(
                       onPressed: () {
                         setState(() {
@@ -232,11 +289,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             : Icons.visibility_off_outlined,
                       ),
                     ),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value.length < 8) {
-                      return 'Utilise au moins 8 caractères.';
+                    if (value == null ||
+                        value.length < 6) {
+                      return 'Le mot de passe doit contenir au moins 6 caractères.';
                     }
+
                     return null;
                   },
                 ),
@@ -244,26 +304,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
 
                 CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
                   value: _acceptedTerms,
-                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity:
+                      ListTileControlAffinity.leading,
+                  title: const Text(
+                    'J’accepte les conditions d’utilisation '
+                    'et la politique de confidentialité.',
+                  ),
                   onChanged: (value) {
                     setState(() {
                       _acceptedTerms = value ?? false;
                     });
                   },
-                  title: const Text(
-                    'J’accepte les conditions d’utilisation '
-                    'et la politique de confidentialité.',
-                    style: TextStyle(fontSize: 13),
-                  ),
                 ),
 
                 const SizedBox(height: 20),
 
                 SizedBox(
                   width: double.infinity,
-                  height: 54,
+                  height: 55,
                   child: ElevatedButton(
                     onPressed: _continueRegistration,
                     child: const Text(
@@ -275,6 +335,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 20),
+
+                Center(
+                  child: Text(
+                    'Ose est réservé aux personnes de 18 ans et plus.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
               ],
             ),
           ),
