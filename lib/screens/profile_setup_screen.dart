@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'photo_setup_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -64,11 +65,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Profil préparé !',
-        ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PhotoSetupScreen(),
       ),
     );
   }
