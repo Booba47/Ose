@@ -4,7 +4,8 @@ class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
 
   @override
-  State<DiscoverScreen> createState() => _DiscoverScreenState();
+  State<DiscoverScreen> createState() =>
+      _DiscoverScreenState();
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
@@ -33,11 +34,20 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           'Cinéma, cuisine et longues discussions autour d’un café.',
       'emoji': '👩🏽',
     },
+    {
+      'name': 'Julie',
+      'age': 28,
+      'city': 'Bordeaux',
+      'bio':
+          'J’adore les balades, les voyages et les conversations sincères.',
+      'emoji': '👩🏻',
+    },
   ];
 
   int _currentIndex = 0;
 
   void _passProfile() {
+    _showActionMessage('Profil passé');
     _nextProfile();
   }
 
@@ -47,12 +57,22 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Tu as aimé le profil de ${profile['name']} ❤️',
+          'Tu as aimé ${profile['name']} ❤️',
         ),
+        duration: const Duration(seconds: 2),
       ),
     );
 
     _nextProfile();
+  }
+
+  void _showActionMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   void _nextProfile() {
@@ -71,7 +91,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          10,
+          16,
+          8,
+        ),
         child: Column(
           children: [
             Expanded(
@@ -84,17 +109,20 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       flex: 6,
                       child: Container(
                         width: double.infinity,
-                        color: Colors.pink.shade50,
+                        decoration: BoxDecoration(
+                          color: Colors.pink.shade50,
+                        ),
                         child: Center(
                           child: Text(
                             profile['emoji'],
                             style: const TextStyle(
-                              fontSize: 110,
+                              fontSize: 115,
                             ),
                           ),
                         ),
                       ),
                     ),
+
                     Expanded(
                       flex: 4,
                       child: Padding(
@@ -116,9 +144,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                     ),
                                   ),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.verified,
-                                  color: Colors.pink,
+                                  color: Colors.pink.shade400,
                                 ),
                               ],
                             ),
@@ -136,7 +164,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                 Text(
                                   profile['city'],
                                   style: TextStyle(
-                                    color: Colors.grey.shade700,
+                                    color:
+                                        Colors.grey.shade700,
+                                    fontSize: 15,
                                   ),
                                 ),
                               ],
@@ -163,7 +193,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ),
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             Row(
               mainAxisAlignment:
@@ -175,6 +205,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   onPressed: _passProfile,
                   color: Colors.grey,
                 ),
+
                 _ActionButton(
                   icon: Icons.favorite,
                   label: 'J’aime',
@@ -184,7 +215,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             Text(
               'Prends ton temps. Il n’y a aucune pression. ❤️',
@@ -194,8 +225,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 color: Colors.grey.shade600,
               ),
             ),
-
-            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -234,7 +263,9 @@ class _ActionButton extends StatelessWidget {
             ),
           ),
         ),
+
         const SizedBox(height: 6),
+
         Text(
           label,
           style: const TextStyle(
