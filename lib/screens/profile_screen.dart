@@ -12,18 +12,25 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryPhoto = profile.primaryPhoto;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           const SizedBox(height: 20),
 
-          const CircleAvatar(
+          CircleAvatar(
             radius: 65,
-            child: Icon(
-              Icons.person,
-              size: 70,
-            ),
+            backgroundImage: primaryPhoto != null
+                ? NetworkImage(primaryPhoto)
+                : null,
+            child: primaryPhoto == null
+                ? const Icon(
+                    Icons.person,
+                    size: 70,
+                  )
+                : null,
           ),
 
           const SizedBox(height: 18),
@@ -111,7 +118,8 @@ class ProfileScreen extends StatelessWidget {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: profile.interests.map((interest) {
+                    children:
+                        profile.interests.map((interest) {
                       return Chip(
                         label: Text(interest),
                       );
