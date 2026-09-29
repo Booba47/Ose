@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/user_profile.dart';
 import 'discover_screen.dart';
-import 'messages_screen.dart';
 import 'matches_screen.dart';
+import 'messages_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -31,7 +31,9 @@ class _HomeScreenState extends State<HomeScreen> {
       const DiscoverScreen(),
       const MessagesScreen(),
       const MatchesScreen(),
-      ProfileScreen(profile: widget.profile),
+      ProfileScreen(
+        profile: widget.profile,
+      ),
     ];
   }
 
@@ -41,68 +43,64 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  String get _title {
+    switch (_currentIndex) {
+      case 0:
+        return 'Découvrir';
+      case 1:
+        return 'Messages';
+      case 2:
+        return 'Matchs';
+      case 3:
+        return 'Mon profil';
+      default:
+        return 'Ose';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-
+        backgroundColor: Colors.white,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: Colors.pink.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Text(
-                  '❤️',
-                  style: TextStyle(
-                    fontSize: 17,
-                  ),
-                ),
+            const Text(
+              '❤️',
+              style: TextStyle(
+                fontSize: 22,
               ),
             ),
-
-            const SizedBox(width: 8),
-
-            const Text(
-              'Ose',
-              style: TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.bold,
+            const SizedBox(width: 7),
+            Text(
+              _title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Colors.black87,
               ),
             ),
           ],
         ),
-
         actions: [
           IconButton(
+            tooltip: 'Notifications',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                    'Les notifications seront ajoutées prochainement.',
+                    'Les notifications seront bientôt disponibles.',
                   ),
-                  behavior: SnackBarBehavior.floating,
                 ),
               );
             },
             icon: const Icon(
               Icons.notifications_none_rounded,
+              color: Colors.black87,
             ),
           ),
-
-          const SizedBox(width: 4),
         ],
       ),
 
@@ -114,17 +112,8 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _onNavigationTap,
-
         backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-
-        elevation: 8,
-
         indicatorColor: Colors.pink.shade50,
-
-        labelBehavior:
-            NavigationDestinationLabelBehavior.alwaysShow,
-
         destinations: const [
           NavigationDestination(
             icon: Icon(
@@ -136,35 +125,32 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             label: 'Découvrir',
           ),
-
           NavigationDestination(
             icon: Icon(
-              Icons.chat_bubble_outline,
+              Icons.chat_bubble_outline_rounded,
             ),
             selectedIcon: Icon(
-              Icons.chat_bubble,
+              Icons.chat_bubble_rounded,
               color: Colors.pink,
             ),
             label: 'Messages',
           ),
-
           NavigationDestination(
             icon: Icon(
-              Icons.favorite_border,
+              Icons.favorite_border_rounded,
             ),
             selectedIcon: Icon(
-              Icons.favorite,
+              Icons.favorite_rounded,
               color: Colors.pink,
             ),
             label: 'Matchs',
           ),
-
           NavigationDestination(
             icon: Icon(
-              Icons.person_outline,
+              Icons.person_outline_rounded,
             ),
             selectedIcon: Icon(
-              Icons.person,
+              Icons.person_rounded,
               color: Colors.pink,
             ),
             label: 'Profil',
