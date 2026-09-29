@@ -12,14 +12,11 @@ class MatchService {
   /// Vérifie si l'utilisateur a aimé le profil
   /// et si un match existe.
   static bool checkForMatch(DatingProfile profile) {
-    if (!LikeService.hasLiked(profile)) {
-      return false;
-    }
-
-    return isMatched(profile);
+    return LikeService.hasLiked(profile) &&
+        isMatched(profile);
   }
 
-  /// Crée un match.
+  /// Crée un match avec un profil.
   static void createMatch(DatingProfile profile) {
     _matchedProfileIds.add(profile.id);
   }
@@ -29,7 +26,7 @@ class MatchService {
     _matchedProfileIds.remove(profile.id);
   }
 
-  /// Retourne tous les identifiants des matchs.
+  /// Retourne les identifiants de tous les matchs.
   static List<String> get matchedProfileIds {
     return List.unmodifiable(
       _matchedProfileIds,
@@ -41,15 +38,23 @@ class MatchService {
     return _matchedProfileIds.length;
   }
 
-  /// Supprime tous les matchs.
+  /// Retourne true s'il existe au moins un match.
+  static bool get hasMatches {
+    return _matchedProfileIds.isNotEmpty;
+  }
+
+  /// Réinitialise tous les matchs.
   static void clear() {
     _matchedProfileIds.clear();
   }
 
-  /// Matchs de démonstration.
+  /// Initialise les matchs de démonstration.
   ///
-  /// Cette partie sera remplacée par Firebase
-  /// lorsque le vrai système de comptes sera connecté.
+  /// Pour la version actuelle, Sophie et Aïcha
+  /// sont utilisées comme matchs de démonstration.
+  ///
+  /// Cette méthode sera remplacée par les données
+  /// provenant de Firebase lorsque le backend sera connecté.
   static void initializeDemoMatches() {
     _matchedProfileIds.addAll([
       'profile_1',
