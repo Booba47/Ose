@@ -15,41 +15,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController =
+      TextEditingController();
 
   DateTime? _birthDate;
-  bool _hidePassword = true;
   bool _acceptedTerms = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectBirthDate() async {
-    final now = DateTime.now();
-
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime(
-        now.year - 25,
-        now.month,
-        now.day,
-      ),
-      firstDate: DateTime(1900),
-      lastDate: now,
-      helpText: 'Choisis ta date de naissance',
-      cancelText: 'Annuler',
-      confirmText: 'Valider',
-    );
-
-    if (pickedDate != null) {
-      setState(() {
-        _birthDate = pickedDate;
-      });
-    }
   }
 
   int _calculateAge(DateTime birthDate) {
@@ -66,7 +46,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return age;
   }
 
-  void _continueRegistration() {
+  Future<void> _selectBirthDate() async {
+    final now = DateTime.now();
+
+    final latestDate = DateTime(
+      now.year - 18,
+      now.month,
+      now.day,
+    );
+
+    final firstDate = DateTime(
+      now.year - 100,
+      now.month,
+      now.day,
+    );
+
+    final initialDate = _birthDate ??
+        DateTime(
+          now.year - 25,
+          now.month,
+          now.day,
+        );
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: latestDate,
+      helpText: 'Sélectionne ta date de naissance',
+      cancelText: 'Annuler',
+      confirmText: 'Valider',
+    );
+
+    if (pickedDate == null) {
+      return;
+    }
+
+    setState(() {
+      _birthDate = pickedDate;
+    });
+  }
+
+  void _register() {
+    FocusScope.of(context).unfocus();
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -75,19 +98,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Choisis ta date de naissance.',
+            'Sélectionne ta date de naissance.',
           ),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    if (_calculateAge(_birthDate!) < 18) {
+    final age = _calculateAge(_birthDate!);
+
+    if (age < 18) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Ose est réservé aux personnes de 18 ans et plus.',
+            'Ose est réservée aux personnes majeures.',
           ),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -97,8 +124,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Tu dois accepter les conditions pour continuer.',
+            'Tu dois accepter les conditions d’utilisation.',
           ),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -125,61 +153,76 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              12,
+              20,
+              30,
+            ),
             child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
-                const Center(
-                  child: Text(
-                    'Bienvenue sur Ose ❤️',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                Center(
-                  child: Text(
-                    'Créons ton profil en quelques étapes.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
                 const Text(
-                  'Nom ou pseudo',
+                  'Bienvenue sur Ose ❤️',
                   style: TextStyle(
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
 
                 const SizedBox(height: 8),
 
+                Text(
+                  'Quelques informations pour commencer '
+                  'ton aventure.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.4,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+
+                const SizedBox(height: 26),
+
+                const Text(
+                  'Comment doit-on t’appeler ?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
                 TextFormField(
                   controller: _nameController,
                   textCapitalization:
                       TextCapitalization.words,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
+                    labelText: 'Prénom ou pseudo',
                     hintText: 'Ex. Alex',
-                    prefixIcon: Icon(
+                    prefixIcon: const Icon(
                       Icons.person_outline,
                     ),
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(14),
+                    ),
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value.trim().length < 2) {
-                      return 'Entre au moins 2 caractères.';
+                    final text = value?.trim() ?? '';
+
+                    if (text.isEmpty) {
+                      return 'Indique ton prénom ou ton pseudo.';
+                    }
+
+                    if (text.length < 2) {
+                      return 'Utilise au moins 2 caractères.';
+                    }
+
+                    if (text.length > 30) {
+                      return '30 caractères maximum.';
                     }
 
                     return null;
@@ -190,155 +233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const Text(
                   'Date de naissance',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                InkWell(
-                  onTap: _selectBirthDate,
-                  borderRadius: BorderRadius.circular(4),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.cake_outlined,
-                      ),
-                      border: OutlineInputBorder(),
-                    ),
-                    child: Text(
-                      _birthDate == null
-                          ? 'Choisir ma date de naissance'
-                          : '${_birthDate!.day.toString().padLeft(2, '0')}/'
-                              '${_birthDate!.month.toString().padLeft(2, '0')}/'
-                              '${_birthDate!.year}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: _birthDate == null
-                            ? Colors.grey.shade600
-                            : Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                const Text(
-                  'Adresse e-mail',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType:
-                      TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: 'Ex. alex@email.com',
-                    prefixIcon: Icon(
-                      Icons.email_outlined,
-                    ),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Entre ton adresse e-mail.';
-                    }
-
-                    final emailRegex = RegExp(
-                      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                    );
-
-                    if (!emailRegex.hasMatch(
-                      value.trim(),
-                    )) {
-                      return 'Entre une adresse e-mail valide.';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                const Text(
-                  'Mot de passe',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _hidePassword,
-                  decoration: InputDecoration(
-                    hintText: 'Minimum 6 caractères',
-                    prefixIcon: const Icon(
-                      Icons.lock_outline,
-                    ),
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _hidePassword = !_hidePassword;
-                        });
-                      },
-                      icon: Icon(
-                        _hidePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                    ),
-                    border: const OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null ||
-                        value.length < 6) {
-                      return 'Le mot de passe doit contenir au moins 6 caractères.';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                CheckboxListTile(
-                  value: _acceptedTerms,
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity:
-                      ListTileControlAffinity.leading,
-                  title: const Text(
-                    'J’accepte les conditions d’utilisation '
-                    'et la politique de confidentialité.',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _acceptedTerms =
-                          value ?? false;
-                    });
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: _continueRegistration,
-                    child: const Text(
-                      'Continuer',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
+                  style:t.bold,
                       ),
                     ),
                   ),
