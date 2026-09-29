@@ -17,11 +17,11 @@ class UserProfile {
     required this.photos,
   });
 
+  /// Âge calculé automatiquement à partir de la date de naissance.
   int get age {
     final today = DateTime.now();
 
-    int calculatedAge =
-        today.year - birthDate.year;
+    int calculatedAge = today.year - birthDate.year;
 
     if (today.month < birthDate.month ||
         (today.month == birthDate.month &&
@@ -32,6 +32,31 @@ class UserProfile {
     return calculatedAge;
   }
 
+  /// Photo principale du profil.
+  String? get primaryPhoto {
+    if (photos.isEmpty) {
+      return null;
+    }
+
+    return photos.first;
+  }
+
+  /// Indique si le profil possède au moins une photo.
+  bool get hasPhotos {
+    return photos.isNotEmpty;
+  }
+
+  /// Nombre de photos du profil.
+  int get photoCount {
+    return photos.length;
+  }
+
+  /// Indique si le profil possède une biographie.
+  bool get hasBio {
+    return bio.trim().isNotEmpty;
+  }
+
+  /// Crée une copie du profil avec certaines informations modifiées.
   UserProfile copyWith({
     String? name,
     DateTime? birthDate,
@@ -50,13 +75,5 @@ class UserProfile {
       lookingFor: lookingFor ?? this.lookingFor,
       photos: photos ?? this.photos,
     );
-  }
-
-  String? get primaryPhoto {
-    if (photos.isEmpty) {
-      return null;
-    }
-
-    return photos.first;
   }
 }
