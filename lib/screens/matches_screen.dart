@@ -45,54 +45,57 @@ class _MatchesScreenState extends State<MatchesScreen> {
   Widget build(BuildContext context) {
     final matches = _getMatches();
 
-    if (matches.isEmpty) {
-      return const _EmptyMatches();
-    }
-
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Tes matchs ❤️',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            'Les personnes avec qui tu as créé une connexion.',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade700,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          ...matches.map(
-            (profile) => _MatchCard(
-              profile: profile,
-              onChat: () => _openChat(profile),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Center(
-            child: Text(
-              'Prends ton temps. ❤️',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
+      child: matches.isEmpty
+          ? const _EmptyMatches()
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                18,
+                16,
+                30,
               ),
+              children: [
+                const Text(
+                  'Tes matchs ❤️',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  'Les personnes avec qui le feeling est réciproque.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                ...matches.map(
+                  (profile) => _MatchCard(
+                    profile: profile,
+                    onChat: () => _openChat(profile),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                Center(
+                  child: Text(
+                    'Ose faire le premier pas. ❤️',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -109,26 +112,59 @@ class _MatchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: Colors.grey.shade200,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            Container(
-              width: 62,
-              height: 62,
-              decoration: BoxDecoration(
-                color: Colors.pink.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  profile.emoji,
-                  style: const TextStyle(
-                    fontSize: 34,
+            Stack(
+              children: [
+                Container(
+                  width: 78,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    color: Colors.pink.shade50,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.pink.shade100,
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      profile.emoji,
+                      style: const TextStyle(
+                        fontSize: 43,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+
+                Positioned(
+                  right: 1,
+                  bottom: 1,
+                  child: Container(
+                    width: 21,
+                    height: 21,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 3,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(width: 14),
@@ -143,8 +179,9 @@ class _MatchCard extends StatelessWidget {
                       Flexible(
                         child: Text(
                           '${profile.name}, ${profile.age}',
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -152,31 +189,57 @@ class _MatchCard extends StatelessWidget {
 
                       if (profile.verified) ...[
                         const SizedBox(width: 5),
-                        Icon(
+                        const Icon(
                           Icons.verified,
+                          color: Colors.pink,
                           size: 18,
-                          color: Colors.pink.shade400,
                         ),
                       ],
                     ],
                   ),
 
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
 
-                  Text(
-                    profile.city,
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                    ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 15,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          profile.city,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
 
-                  const Text(
-                    'Match ❤️',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.pink.shade50,
+                      borderRadius:
+                          BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Match ❤️',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.pink.shade800,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -185,13 +248,22 @@ class _MatchCard extends StatelessWidget {
 
             const SizedBox(width: 8),
 
-            IconButton(
-              onPressed: onChat,
-              icon: const Icon(
-                Icons.chat_bubble_outline,
+            SizedBox(
+              width: 46,
+              height: 46,
+              child: Material(
+                color: Colors.pink,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onChat,
+                  child: const Icon(
+                    Icons.chat_bubble_outline,
+                    color: Colors.white,
+                    size: 21,
+                  ),
+                ),
               ),
-              color: Colors.pink,
-              tooltip: 'Discuter',
             ),
           ],
         ),
@@ -205,66 +277,61 @@ class _EmptyMatches extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.pink.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Text(
-                    '❤️',
-                    style: TextStyle(
-                      fontSize: 48,
-                    ),
-                  ),
-                ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                color: Colors.pink.shade50,
+                shape: BoxShape.circle,
               ),
-
-              const SizedBox(height: 24),
-
-              const Text(
-                'Pas encore de match',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: const Icon(
+                Icons.favorite_border_rounded,
+                size: 54,
+                color: Colors.pink,
               ),
+            ),
 
-              const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
-              Text(
-                'Quand quelqu’un que tu as aimé '
-                't’aime aussi, votre match apparaîtra ici.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  color: Colors.grey.shade700,
-                ),
+            const Text(
+              'Pas encore de match',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
-              const Text(
-                'Ose faire le premier pas. ❤️',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+            Text(
+              'Continue à découvrir des personnes. '
+              'Ton prochain match est peut-être juste là.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.4,
+                color: Colors.grey.shade700,
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 24),
+
+            const Text(
+              'Ose faire le premier pas. ❤️',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
