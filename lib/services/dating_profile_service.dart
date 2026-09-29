@@ -83,7 +83,39 @@ class DatingProfileService {
     ),
   ];
 
+  /// Retourne les profils disponibles pour la découverte.
+  ///
+  /// Pour l'instant, les profils sont des données de démonstration.
+  /// Cette méthode sera ensuite remplacée par une récupération
+  /// depuis Firebase Firestore.
   static List<DatingProfile> getProfiles() {
-    return List.unmodifiable(demoProfiles);
+    return List.unmodifiable(
+      demoProfiles,
+    );
+  }
+
+  /// Recherche un profil par son identifiant.
+  static DatingProfile? getProfileById(String id) {
+    for (final profile in demoProfiles) {
+      if (profile.id == id) {
+        return profile;
+      }
+    }
+
+    return null;
+  }
+
+  /// Retourne uniquement les profils vérifiés.
+  static List<DatingProfile> getVerifiedProfiles() {
+    return List.unmodifiable(
+      demoProfiles.where(
+        (profile) => profile.verified,
+      ),
+    );
+  }
+
+  /// Nombre total de profils disponibles.
+  static int get profileCount {
+    return demoProfiles.length;
   }
 }
