@@ -4,19 +4,16 @@ import '../models/dating_profile.dart';
 import '../services/dating_profile_service.dart';
 import '../services/like_service.dart';
 import '../services/match_service.dart';
-import 'chat_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
 
   @override
-  State<DiscoverScreen> createState() =>
-      _DiscoverScreenState();
+  State<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  late final List<DatingProfile> _profiles;
-
+  late List<DatingProfile> _profiles;
   int _currentIndex = 0;
 
   @override
@@ -60,7 +57,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     LikeService.likeProfile(profile);
 
     if (MatchService.isMatched(profile)) {
-      _showMatch(profile);
+      MatchService.createMatch(profile);
+      _showMatchDialog(profile);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -77,97 +75,80 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     });
   }
 
-  void _showMatch(DatingProfile profile) {
-    showDialog<void>(
+  void _showMatchDialog(DatingProfile profile) {
+    showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
+          title: const Text(
+            'C’est un match ! 💕',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '💕',
-                style: TextStyle(
-                  fontSize: 60,
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: Colors.pink.shade50,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  profile.emoji,
+                  style: const TextStyle(
+                    fontSize: 50,
+                  ),
                 ),
               ),
-
-              const SizedBox(height: 12),
-
-              const Text(
-                'C’est un match !',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
+              const SizedBox(height: 18),
               Text(
-                '${profile.name} et toi vous vous êtes aimés.',
+                'Toi et ${profile.name} vous vous êtes aimés.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Tu peux maintenant commencer une conversation.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatScreen(
-                          profile: profile,
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pink,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Envoyer un message',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  'Continuer à découvrir',
+                  color: Colors.black54,
                 ),
               ),
             ],
           ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.pink,
+              ),
+              child: const Text(
+                'Continuer',
+              ),
+            ),
+          ],
         );
       },
     );
+  }
+
+  void _restartDiscovery() {
+    setState(() {
+      _currentIndex = 0;
+    });
   }
 
   @override
@@ -175,107 +156,232 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final profile = _currentProfile;
 
     if (profile == null) {
-      return _buildEndScreen();
+      return _buildEndState();
     }
 
-    return Scaffold(
-      body: SafeArea(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        16,
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: _buildProfileCard(profile),
+          ),
+          const SizedBox(height: 14),
+          _buildActionButtons(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(DatingProfile profile) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.pink.shade50,
+            Colors.white,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: 0.08,
+            ),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                16,
-                20,
-                8,
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Découvrir',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+            Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: 230,
+                  decoration: BoxDecoration(
+                    color: Colors.pink.shade100,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    profile.emoji,
+                    style: const TextStyle(
+                      fontSize: 100,
+                    ),
+                  ),
+                ),
+                if (profile.verified)
+                  Positioned(
+                    top: 14,
+                    right: 14,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.verified,
+                            size: 18,
+                            color: Colors.blue,
+                          ),
+                          SizedBox(width: 5),
+                          Text(
+                            'Vérifié',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
+              ],
+            ),
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
+            const SizedBox(height: 18),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${profile.name}, ${profile.age}',
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.pink.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.favorite,
-                          size: 16,
-                          color: Colors.pink,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            Row(
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 19,
+                  color: Colors.pink.shade400,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  profile.city,
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+
+            if (profile.hasBio) ...[
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  profile.bio,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+
+            if (profile.hasInterests) ...[
+              const SizedBox(height: 18),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Centres d’intérêt',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: profile.interests.map(
+                    (interest) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${_currentIndex + 1}/${_profiles.length}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.pink.shade800,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.pink.shade100,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  8,
-                  16,
-                  8,
-                ),
-                child: _ProfileCard(
-                  profile: profile,
+                        child: Text(
+                          interest,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    },
+                  ).toList(),
                 ),
               ),
-            ),
+            ],
 
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                24,
-                8,
-                24,
-                18,
+            const SizedBox(height: 18),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
                 children: [
-                  _ActionButton(
-                    icon: Icons.close,
-                    label: 'Passer',
-                    backgroundColor:
-                        Colors.grey.shade100,
-                    iconColor: Colors.grey.shade700,
-                    onPressed: _pass,
+                  Icon(
+                    profile.verified
+                        ? Icons.verified_user_outlined
+                        : Icons.shield_outlined,
+                    color: profile.verified
+                        ? Colors.blue
+                        : Colors.black45,
                   ),
-
-                  const SizedBox(width: 28),
-
-                  _ActionButton(
-                    icon: Icons.favorite,
-                    label: 'J’aime',
-                    backgroundColor: Colors.pink.shade50,
-                    iconColor: Colors.pink,
-                    onPressed: _like,
-                    large: true,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      profile.verified
+                          ? 'Profil vérifié par Ose'
+                          : 'Profil non vérifié pour le moment',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -286,343 +392,87 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  Widget _buildEndScreen() {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(30),
-            child: Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.pink.shade50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '💕',
-                      style: TextStyle(
-                        fontSize: 48,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                const Text(
-                  'Tu as fait le tour !',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                Text(
-                  'De nouveaux profils seront bientôt '
-                  'disponibles.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.5,
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _currentIndex = 0;
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pink,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: const Text(
-                      'Recommencer',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _ActionButton(
+          icon: Icons.close_rounded,
+          label: 'Passer',
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.grey.shade700,
+          borderColor: Colors.grey.shade300,
+          onPressed: _pass,
         ),
-      ),
+        const SizedBox(width: 22),
+        _ActionButton(
+          icon: Icons.favorite_rounded,
+          label: 'J’aime',
+          backgroundColor: Colors.pink,
+          foregroundColor: Colors.white,
+          borderColor: Colors.pink,
+          onPressed: _like,
+        ),
+      ],
     );
   }
-}
 
-class _ProfileCard extends StatelessWidget {
-  final DatingProfile profile;
-
-  const _ProfileCard({
-    required this.profile,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.08,
-            ),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: SingleChildScrollView(
+  Widget _buildEndState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              height: 260,
-              width: double.infinity,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.pink.shade100,
-                    Colors.pink.shade50,
-                  ],
+                color: Colors.pink.shade50,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                '💕',
+                style: TextStyle(
+                  fontSize: 52,
                 ),
               ),
-              child: Stack(
-                children: [
-                  const Center(
-                    child: Text(
-                      '❤️',
-                      style: TextStyle(
-                        fontSize: 120,
-                      ),
-                    ),
-                  ),
-
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 15,
-                            color: Colors.pink.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            profile.city,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  if (profile.verified)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Container(
-                        padding:
-                            const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius:
-                              BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.verified,
-                              size: 16,
-                              color: Colors.blue.shade600,
-                            ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'Vérifié',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
+            ),
+            const SizedBox(height: 22),
+            const Text(
+              'Tu as fait le tour !',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.w800,
               ),
             ),
-
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                18,
-                20,
-                22,
+            const SizedBox(height: 10),
+            const Text(
+              'Il n’y a plus de profils à découvrir pour le moment.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.black54,
+                fontSize: 16,
+                height: 1.4,
               ),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${profile.name}, ${profile.age}',
-                          style: const TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                      if (profile.verified)
-                        Icon(
-                          Icons.verified,
-                          color: Colors.blue.shade600,
-                          size: 24,
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Text(
-                    profile.bio,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.45,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  const Text(
-                    'Centres d’intérêt',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 9),
-
-                  Wrap(
-                    spacing: 7,
-                    runSpacing: 7,
-                    children: profile.interests.map(
-                      (interest) {
-                        return Container(
-                          padding:
-                              const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.pink.shade50,
-                            borderRadius:
-                                BorderRadius.circular(18),
-                          ),
-                          child: Text(
-                            interest,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight:
-                                  FontWeight.w600,
-                              color:
-                                  Colors.pink.shade800,
-                            ),
-                          ),
-                        );
-                      },
-                    ).toList(),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Container(
-                    width: double.infinity,
-                    padding:
-                        const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius:
-                          BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.shield_outlined,
-                          size: 19,
-                          color: Colors.green.shade600,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            profile.verified
-                                ? 'Profil vérifié par Ose'
-                                : 'Profil en cours de vérification',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade700,
-                              fontWeight:
-                                  FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _restartDiscovery,
+              icon: const Icon(
+                Icons.refresh_rounded,
+              ),
+              label: const Text(
+                'Recommencer',
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.pink,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 14,
+                ),
               ),
             ),
           ],
@@ -636,51 +486,51 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color backgroundColor;
-  final Color iconColor;
+  final Color foregroundColor;
+  final Color borderColor;
   final VoidCallback onPressed;
-  final bool large;
 
   const _ActionButton({
     required this.icon,
     required this.label,
     required this.backgroundColor,
-    required this.iconColor,
+    required this.foregroundColor,
+    required this.borderColor,
     required this.onPressed,
-    this.large = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final size = large ? 68.0 : 58.0;
-
     return Column(
       children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: Material(
-            color: backgroundColor,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onPressed,
+        Material(
+          color: backgroundColor,
+          shape: CircleBorder(
+            side: BorderSide(
+              color: borderColor,
+              width: 1.5,
+            ),
+          ),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.all(18),
               child: Icon(
                 icon,
-                size: large ? 31 : 27,
-                color: iconColor,
+                size: 30,
+                color: foregroundColor,
               ),
             ),
           ),
         ),
-
         const SizedBox(height: 5),
-
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade700,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
           ),
         ),
       ],
