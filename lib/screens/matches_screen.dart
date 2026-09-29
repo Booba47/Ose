@@ -13,21 +13,22 @@ class MatchesScreen extends StatefulWidget {
 }
 
 class _MatchesScreenState extends State<MatchesScreen> {
+  late List<DatingProfile> _matches;
+
   @override
   void initState() {
     super.initState();
 
     MatchService.initializeDemoMatches();
+    _loadMatches();
   }
 
-  List<DatingProfile> _getMatches() {
+  void _loadMatches() {
     final profiles = DatingProfileService.getProfiles();
 
-    return profiles
-        .where(
-          (profile) => MatchService.isMatched(profile),
-        )
-        .toList();
+    _matches = profiles.where((profile) {
+      return MatchService.isMatched(profile);
+    }).toList();
   }
 
   void _openChat(DatingProfile profile) {
@@ -41,260 +42,134 @@ class _MatchesScreenState extends State<MatchesScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final matches = _getMatches();
+  void _removeMatch(DatingProfile profile) {
+    MatchService.removeMatch(profile);
 
-    return SafeArea(
-      child: matches.isEmpty
-          ? const _EmptyMatches()
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(
-                16,
-                18,
-                16,
-                30,
-              ),
-              children: [
-                const Text(
-                  'Tes matchs ❤️',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+    setState(() {
+      _loadMatches();
+    });
 
-                const SizedBox(height: 6),
-
-                Text(
-                  'Les personnes avec qui le feeling est réciproque.',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-
-                const SizedBox(height: 22),
-
-                ...matches.map(
-                  (profile) => _MatchCard(
-                    profile: profile,
-                    onChat: () => _openChat(profile),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                Center(
-                  child: Text(
-                    'Ose faire le premier pas. ❤️',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${profile.name} a été retiré de tes matchs.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
-}
-
-class _MatchCard extends StatelessWidget {
-  final DatingProfile profile;
-  final VoidCallback onChat;
-
-  const _MatchCard({
-    required this.profile,
-    required this.onChat,
-  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: Colors.grey.shade200,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
           children: [
-            Stack(
-              children: [
-                Container(
-                  width: 78,
-                  height: 78,
-                  decoration: BoxDecoration(
-                    color: Colors.pink.shade50,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.pink.shade100,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      profile.emoji,
-                      style: const TextStyle(
-                        fontSize: 43,
-                      ),
-                    ),
-                  ),
-                ),
-
-                Positioned(
-                  right: 1,
-                  bottom: 1,
-                  child: Container(
-                    width: 21,
-                    height: 21,
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 3,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(width: 14),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                18,
+                20,
+                12,
+              ),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          '${profile.name}, ${profile.age}',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  const Expanded(
+                    child: Text(
+                      'Mes matchs',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
                       ),
-
-                      if (profile.verified) ...[
-                        const SizedBox(width: 5),
-                        const Icon(
-                          Icons.verified,
-                          color: Colors.pink,
-                          size: 18,
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
-
-                  const SizedBox(height: 6),
-
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 15,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          profile.city,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 5,
+                      horizontal: 12,
+                      vertical: 7,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.pink.shade50,
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      'Match ❤️',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.pink.shade800,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.favorite,
+                          size: 16,
+                          color: Colors.pink,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${_matches.length}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.pink.shade800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(width: 8),
+            Expanded(
+              child: _matches.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        24,
+                      ),
+                      itemCount: _matches.length,
+                      separatorBuilder: (_, __) {
+                        return const SizedBox(height: 12);
+                      },
+                      itemBuilder: (context, index) {
+                        final profile = _matches[index];
 
-            SizedBox(
-              width: 46,
-              height: 46,
-              child: Material(
-                color: Colors.pink,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: onChat,
-                  child: const Icon(
-                    Icons.chat_bubble_outline,
-                    color: Colors.white,
-                    size: 21,
-                  ),
-                ),
-              ),
+                        return _MatchCard(
+                          profile: profile,
+                          onChat: () {
+                            _openChat(profile);
+                          },
+                          onRemove: () {
+                            _removeMatch(profile);
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _EmptyMatches extends StatelessWidget {
-  const _EmptyMatches();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(30),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 110,
-              height: 110,
+              width: 105,
+              height: 105,
               decoration: BoxDecoration(
                 color: Colors.pink.shade50,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.favorite_border_rounded,
-                size: 54,
-                color: Colors.pink,
+              child: const Center(
+                child: Text(
+                  '💕',
+                  style: TextStyle(
+                    fontSize: 50,
+                  ),
+                ),
               ),
             ),
 
@@ -304,35 +179,226 @@ class _EmptyMatches extends StatelessWidget {
               'Pas encore de match',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 25,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             Text(
-              'Continue à découvrir des personnes. '
-              'Ton prochain match est peut-être juste là.',
+              'Continue à découvrir des profils. '
+              'Quand quelqu’un t’aime aussi, '
+              'vous apparaîtrez ici.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                height: 1.4,
+                height: 1.5,
                 color: Colors.grey.shade700,
               ),
             ),
 
             const SizedBox(height: 24),
 
-            const Text(
-              'Ose faire le premier pas. ❤️',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 11,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.pink.shade50,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Ose faire le premier pas ❤️',
+                style: TextStyle(
+                  color: Colors.pink.shade800,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MatchCard extends StatelessWidget {
+  final DatingProfile profile;
+  final VoidCallback onChat;
+  final VoidCallback onRemove;
+
+  const _MatchCard({
+    required this.profile,
+    required this.onChat,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.grey.shade200,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: 0.05,
+            ),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: Colors.pink.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    profile.emoji,
+                    style: const TextStyle(
+                      fontSize: 38,
+                    ),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                right: 1,
+                bottom: 2,
+                child: Container(
+                  width: 17,
+                  height: 17,
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade500,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 3,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${profile.name}, ${profile.age}',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                    if (profile.verified) ...[
+                      const SizedBox(width: 5),
+                      Icon(
+                        Icons.verified,
+                        size: 18,
+                        color: Colors.blue.shade600,
+                      ),
+                    ],
+                  ],
+                ),
+
+                const SizedBox(height: 5),
+
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 15,
+                      color: Colors.grey.shade600,
+                    ),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        profile.city,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  'Vous vous êtes aimés ❤️',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.pink.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          Column(
+            children: [
+              SizedBox(
+                width: 48,
+                height: 42,
+                child: Material(
+                  color: Colors.pink,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    onTap: onChat,
+                    borderRadius: BorderRadius.circular(14),
+                    child: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: Colors.white,
+                      size: 21,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 3),
+
+              IconButton(
+                onPressed: onRemove,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Retirer le match',
+                icon: Icon(
+                  Icons.more_horiz,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
