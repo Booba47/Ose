@@ -1,1 +1,44 @@
+name: Compiler Ose Android
 
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le projet
+        uses: actions/checkout@v4
+
+      - name: Installer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Installer Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Vérifier Flutter
+        run: flutter --version
+
+      - name: Générer les fichiers Android
+        run: flutter create . --platforms=android
+
+      - name: Installer les dépendances
+        run: flutter pub get
+
+      - name: Compiler Ose
+        run: flutter build apk --release
+
+      - name: Récupérer l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ose-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
