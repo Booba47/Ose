@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/dating_profile.dart';
 import '../services/dating_profile_service.dart';
 import '../services/match_service.dart';
+import 'chat_screen.dart';
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
@@ -27,6 +28,17 @@ class _MatchesScreenState extends State<MatchesScreen> {
           (profile) => MatchService.isMatched(profile),
         )
         .toList();
+  }
+
+  void _openChat(DatingProfile profile) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          profile: profile,
+        ),
+      ),
+    );
   }
 
   @override
@@ -64,15 +76,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
           ...matches.map(
             (profile) => _MatchCard(
               profile: profile,
-              onChat: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'La conversation avec ${profile.name} sera bientôt disponible.',
-                    ),
-                  ),
-                );
-              },
+              onChat: () => _openChat(profile),
             ),
           ),
 
