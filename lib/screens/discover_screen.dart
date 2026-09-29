@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/dating_profile.dart';
 import '../services/dating_profile_service.dart';
 import '../services/like_service.dart';
+import '../services/match_service.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -22,6 +23,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     super.initState();
 
     _profiles = DatingProfileService.getProfiles();
+
+    MatchService.initializeDemoMatches();
   }
 
   void _passProfile() {
@@ -41,9 +44,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
     LikeService.likeProfile(profile);
 
-    _showMessage(
-      'Tu as aimé ${profile.name} ❤️',
-    );
+    if (MatchService.isMatched(profile)) {
+      _showMatchMessage(profile);
+    } else {
+      _showMessage(
+        'Tu as aimé ${profile.name} ❤️',
+      );
+    }
 
     _nextProfile();
   }
@@ -53,6 +60,34 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       SnackBar(
         content: Text(message),
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showMatchMessage(DatingProfile profile) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        content: Row(
+          children: [
+            const Text(
+              '❤️',
+              style: TextStyle(
+                fontSize: 24,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'C’est un match avec ${profile.name} !',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
