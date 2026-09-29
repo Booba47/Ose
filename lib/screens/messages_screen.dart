@@ -45,54 +45,57 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Widget build(BuildContext context) {
     final conversations = _getConversations();
 
-    if (conversations.isEmpty) {
-      return const _EmptyMessages();
-    }
-
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Messages',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            'Continue la conversation avec tes matchs.',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade700,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          ...conversations.map(
-            (profile) => _ConversationCard(
-              profile: profile,
-              onTap: () => _openChat(profile),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Center(
-            child: Text(
-              'Ose faire le premier pas. ❤️',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
+      child: conversations.isEmpty
+          ? const _EmptyMessages()
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                18,
+                16,
+                30,
               ),
+              children: [
+                const Text(
+                  'Messages',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  'Continue la conversation avec tes matchs.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                ...conversations.map(
+                  (profile) => _ConversationCard(
+                    profile: profile,
+                    onTap: () => _openChat(profile),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Center(
+                  child: Text(
+                    'Ose faire le premier pas. ❤️',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -109,29 +112,55 @@ class _ConversationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0,
       margin: const EdgeInsets.only(bottom: 10),
+      color: Colors.grey.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: Colors.pink.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    profile.emoji,
-                    style: const TextStyle(
-                      fontSize: 32,
+              Stack(
+                children: [
+                  Container(
+                    width: 62,
+                    height: 62,
+                    decoration: BoxDecoration(
+                      color: Colors.pink.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        profile.emoji,
+                        style: const TextStyle(
+                          fontSize: 34,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+
+                  Positioned(
+                    right: 0,
+                    bottom: 1,
+                    child: Container(
+                      width: 17,
+                      height: 17,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(width: 14),
@@ -144,12 +173,30 @@ class _ConversationCard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            profile.name,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  profile.name,
+                                  overflow:
+                                      TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight:
+                                        FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+
+                              if (profile.verified) ...[
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.verified,
+                                  color: Colors.pink,
+                                  size: 17,
+                                ),
+                              ],
+                            ],
                           ),
                         ),
 
@@ -163,7 +210,7 @@ class _ConversationCard extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 5),
 
                     Text(
                       'Salut 😊 Content(e) de faire ta connaissance !',
@@ -175,17 +222,36 @@ class _ConversationCard extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 7),
 
-                    const Text(
-                      'Match ❤️',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.favorite,
+                          size: 14,
+                          color: Colors.pink.shade400,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Match',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.pink.shade700,
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
+              ),
+
+              const SizedBox(width: 8),
+
+              const Icon(
+                Icons.chevron_right,
+                color: Colors.grey,
               ),
             ],
           ),
@@ -200,65 +266,61 @@ class _EmptyMessages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.pink.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.chat_bubble_outline,
-                    size: 48,
-                    color: Colors.pink,
-                  ),
-                ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 105,
+              height: 105,
+              decoration: BoxDecoration(
+                color: Colors.pink.shade50,
+                shape: BoxShape.circle,
               ),
-
-              const SizedBox(height: 24),
-
-              const Text(
-                'Aucun message',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 50,
+                color: Colors.pink,
               ),
+            ),
 
-              const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
-              Text(
-                'Tes conversations apparaîtront ici '
-                'après tes premiers matchs.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  color: Colors.grey.shade700,
-                ),
+            const Text(
+              'Aucun message',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
-              const Text(
-                'Ose faire le premier pas. ❤️',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+            Text(
+              'Tes conversations apparaîtront ici '
+              'après tes premiers matchs.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.4,
+                color: Colors.grey.shade700,
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 24),
+
+            const Text(
+              'Ose faire le premier pas. ❤️',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
