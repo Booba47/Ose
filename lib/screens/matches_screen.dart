@@ -4,8 +4,20 @@ import '../models/dating_profile.dart';
 import '../services/dating_profile_service.dart';
 import '../services/match_service.dart';
 
-class MatchesScreen extends StatelessWidget {
+class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
+
+  @override
+  State<MatchesScreen> createState() => _MatchesScreenState();
+}
+
+class _MatchesScreenState extends State<MatchesScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    MatchService.initializeDemoMatches();
+  }
 
   List<DatingProfile> _getMatches() {
     final profiles = DatingProfileService.getProfiles();
