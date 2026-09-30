@@ -15,8 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController =
-      TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   DateTime? _birthDate;
   bool _acceptedTerms = false;
@@ -49,45 +48,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _selectBirthDate() async {
     final now = DateTime.now();
 
-    final latestDate = DateTime(
+    final latestBirthDate = DateTime(
       now.year - 18,
       now.month,
       now.day,
     );
 
-    final firstDate = DateTime(
+    final firstBirthDate = DateTime(
       now.year - 100,
       now.month,
       now.day,
     );
 
-    final initialDate = _birthDate ??
-        DateTime(
-          now.year - 25,
-          now.month,
-          now.day,
-        );
-
-    final pickedDate = await showDatePicker(
+    final selectedDate = await showDatePicker(
       context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: latestDate,
+      initialDate: DateTime(
+        now.year - 25,
+        now.month,
+        now.day,
+      ),
+      firstDate: firstBirthDate,
+      lastDate: latestBirthDate,
       helpText: 'Sélectionne ta date de naissance',
       cancelText: 'Annuler',
       confirmText: 'Valider',
     );
 
-    if (pickedDate == null) {
+    if (selectedDate == null) {
       return;
     }
 
     setState(() {
-      _birthDate = pickedDate;
+      _birthDate = selectedDate;
     });
   }
 
-  void _register() {
+  void _continue() {
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
@@ -112,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Ose est réservée aux personnes majeures.',
+            'Ose est réservé aux personnes majeures.',
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -147,7 +143,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Créer mon compte'),
+        title: const Text(
+          'Créer mon compte',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: Form(
@@ -160,69 +162,230 @@ class _RegisterScreenState extends State<RegisterScreen> {
               30,
             ),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Bienvenue sur Ose ❤️',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                const Center(
+                  child: Text(
+                    'Bienvenue sur Ose 💕',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'Quelques informations pour commencer '
-                  'ton aventure.',
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.4,
-                    color: Colors.grey.shade700,
+                const SizedBox(height: 10),
+                const Center(
+                  child: Text(
+                    'Quelques informations pour commencer.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.4,
+                      color: Colors.black54,
+                    ),
                   ),
                 ),
-
-                const SizedBox(height: 26),
+                const SizedBox(height: 28),
 
                 const Text(
-                  'Comment doit-on t’appeler ?',
+                  'Prénom',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
 
                 TextFormField(
                   controller: _nameController,
-                  textCapitalization:
-                      TextCapitalization.words,
+                  textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
-                    labelText: 'Prénom ou pseudo',
+                    labelText: 'Prénom',
                     hintText: 'Ex. Alex',
                     prefixIcon: const Icon(
-                      Icons.person_outline,
+                      Icons.person_outline_rounded,
                     ),
                     border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: Colors.grey.shade300,
+                      ),
                     ),
                   ),
                   validator: (value) {
                     final text = value?.trim() ?? '';
 
                     if (text.isEmpty) {
-                      return 'Indique ton prénom ou ton pseudo.';
+                      return 'Entre ton prénom.';
                     }
 
                     if (text.length < 2) {
-                      return 'Utilise au moins 2 caractères.';
+                      return 'Le prénom doit contenir au moins 2 caractères.';
                     }
 
-                    if (text.length > 30) {
-                      return '30 caractères maximum.';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  'Adresse e-mail',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'E-mail',
+                    hintText: 'exemple@email.com',
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: Colors.grey.shade300,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    final email = value?.trim() ?? '';
+
+                    if (email.isEmpty) {
+                      return 'Entre ton adresse e-mail.';
+                    }
+
+                    final emailRegex = RegExp(
+                      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                    );
+
+                    if (!emailRegex.hasMatch(email)) {
+                      return 'Entre une adresse e-mail valide.';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  'Mot de passe',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Mot de passe',
+                    hintText: 'Au moins 6 caractères',
+                    prefixIcon: const Icon(
+                      Icons.lock_outline_rounded,
+                    ),
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: Colors.grey.shade300,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    final password = value ?? '';
+
+                    if (password.isEmpty) {
+                      return 'Entre un mot de passe.';
+                    }
+
+                    if (password.length < 6) {
+                      return 'Le mot de passe doit contenir au moins 6 caractères.';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  'Confirmer le mot de passe',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Confirmation',
+                    prefixIcon: const Icon(
+                      Icons.lock_reset_outlined,
+                    ),
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword =
+                              !_obscureConfirmPassword;
+                        });
+                      },
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: Colors.grey.shade300,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Confirme ton mot de passe.';
+                    }
+
+                    if (value != _passwordController.text) {
+                      return 'Les mots de passe ne correspondent pas.';
                     }
 
                     return null;
@@ -233,44 +396,160 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const Text(
                   'Date de naissance',
-                  style:t.bold,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: _selectBirthDate,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 17,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.grey.shade300,
                       ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.cake_outlined,
+                          color: Colors.pink,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _birthDate == null
+                                ? 'Choisir ma date de naissance'
+                                : '${_birthDate!.day.toString().padLeft(2, '0')}/'
+                                    '${_birthDate!.month.toString().padLeft(2, '0')}/'
+                                    '${_birthDate!.year}',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: _birthDate == null
+                                  ? Colors.black54
+                                  : Colors.black87,
+                              fontWeight: _birthDate == null
+                                  ? FontWeight.w400
+                                  : FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.calendar_month_outlined,
+                          color: Colors.black45,
+                        ),
+                      ],
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 20),
 
-                Center(
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.pink.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.shield_outlined,
+                        color: Colors.pink,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Ose est réservé aux personnes majeures de 18 ans et plus.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.4,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _acceptedTerms,
+                      activeColor: Colors.pink,
+                      onChanged: (value) {
+                        setState(() {
+                          _acceptedTerms = value ?? false;
+                        });
+                      },
+                    ),
+                    const Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 11),
+                        child: Text(
+                          'J’accepte les conditions d’utilisation et la politique de confidentialité de Ose.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _continue,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.pink,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Continuer',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                const Center(
                   child: Text(
-                    'Ose est réservé aux personnes de 18 ans et plus.',
+                    'Ose faire le premier pas ❤️',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
+                      color: Colors.black45,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}             child: Text(
-                    'Ose est réservé aux personnes de 18 ans et plus.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
               ],
             ),
           ),
