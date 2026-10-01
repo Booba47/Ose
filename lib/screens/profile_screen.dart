@@ -374,7 +374,7 @@ class _SectionCard extends StatelessWidget {
       ),
     );
   }
-}        title: 'Aide et assistance',
+        title: 'Aide et assistance',
               onTap: () {
                 _showComingSoon(
                   context,
