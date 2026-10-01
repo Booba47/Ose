@@ -12,81 +12,83 @@ class ProfileScreen extends StatelessWidget {
     required this.profile,
   });
 
-  bool _isLocalPhoto(String path) {
-    return path.startsWith('/') ||
-        path.startsWith('file://');
+  void _showComingSoon(
+    BuildContext context,
+    String message,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
-  Widget _buildProfilePhoto() {
-    final photo = profile.primaryPhoto;
-
-    if (photo == null || photo.isEmpty) {
-      return Container(
-        width: 110,
-        height: 110,
-        decoration: BoxDecoration(
-          color: Colors.pink.shade50,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.person,
-          size: 58,
-          color: Colors.pink,
-        ),
-      );
-    }
-
-    if (_isLocalPhoto(photo)) {
-      final localPath = photo.startsWith('file://')
-          ? photo.replaceFirst('file://', '')
-          : photo;
-
-      return ClipOval(
-        child: Image.file(
-          File(localPath),
-          width: 110,
-          height: 110,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) {
-            return Container(
-              width: 110,
-              height: 110,
-              decoration: BoxDecoration(
-                color: Colors.pink.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person,
-                size: 58,
-                color: Colors.pink,
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    return ClipOval(
-      child: Image.network(
-        photo,
-        width: 110,
-        height: 110,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
-          return Container(
-            width: 110,
-            height: 110,
-            decoration: BoxDecoration(
-              color: Colors.pink.shade50,
-              shape: BoxShape.circle,
+  void _showPhoto(
+    BuildContext context,
+    String photoPath,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: _buildPhoto(
+              photoPath,
+              fit: BoxFit.contain,
             ),
-            child: const Icon(
-              Icons.person,
-              size: 58,
-              color: Colors.pink,
-            ),
-          );
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPhoto(
+    String path, {
+    BoxFit fit = BoxFit.cover,
+  }) {
+    final cleanPath = path.startsWith('file://')
+        ? path.substring(7)
+        : path;
+
+    if (cleanPath.startsWith('/')) {
+      return Image.file(
+        File(cleanPath),
+        fit: fit,
+        errorBuilder: (
+          context,
+          error,
+          stackTrace,
+        ) {
+          return _buildPhotoPlaceholder();
         },
+      );
+    }
+
+    return Image.network(
+      cleanPath,
+      fit: fit,
+      errorBuilder: (
+        context,
+        error,
+        stackTrace,
+      ) {
+        return _buildPhotoPlaceholder();
+      },
+    );
+  }
+
+  Widget _buildPhotoPlaceholder() {
+    return Container(
+      color: Colors.pink.shade50,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.person_rounded,
+        size: 80,
+        color: Colors.pink.shade200,
       ),
     );
   }
@@ -94,308 +96,470 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
+            16,
+            16,
+            16,
             30,
           ),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildHeader(context),
+              const SizedBox(height: 20),
+              _buildProfileCard(context),
+              const SizedBox(height: 16),
+              _buildInterestsCard(),
+              const SizedBox(height: 16),
+              _buildLookingForCard(),
+              const SizedBox(height: 16),
+              _buildSettingsCard(context),
+              const SizedBox(height: 20),
               const Center(
                 child: Text(
-                  'Mon profil',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              Center(
-                child: Stack(
-                  children: [
-                    _buildProfilePhoto(),
-
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: const BoxDecoration(
-                          color: Colors.pink,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              Center(
-                child: Text(
-                  '${profile.name}, ${profile.age}',
+                  'Ose faire le premier pas ❤️',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 18,
-                      color: Colors.grey.shade600,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      profile.city,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              _SectionCard(
-                title: 'À propos de moi',
-                icon: Icons.person_outline,
-                child: Text(
-                  profile.bio,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              _SectionCard(
-                title: 'Mes centres d’intérêt',
-                icon: Icons.favorite_border,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: profile.interests.map(
-                    (interest) {
-                      return Container(
-                        padding:
-                            const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.pink.shade50,
-                          borderRadius:
-                              BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          interest,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight:
-                                FontWeight.w600,
-                            color: Colors.pink.shade800,
-                          ),
-                        ),
-                      );
-                    },
-                  ).toList(),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              _SectionCard(
-                title: 'Ce que je recherche',
-                icon: Icons.search,
-                child: Text(
-                  profile.lookingFor,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'La modification du profil sera '
-                          'ajoutée prochainement.',
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                  ),
-                  label: const Text(
-                    'Modifier mon profil',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Les réglages du compte seront '
-                          'ajoutés prochainement.',
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.settings_outlined,
-                  ),
-                  label: const Text(
-                    'Réglages du compte',
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              Center(
-                child: Text(
-                  'Ose faire le premier pas. ❤️',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: Colors.black45,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Mon profil',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Présente-toi sous ton meilleur jour.',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Modifier le profil',
+          onPressed: () {
+            _showComingSoon(
+              context,
+              'La modification du profil sera bientôt disponible.',
+            );
+          },
+          icon: const Icon(
+            Icons.edit_outlined,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: 0.05,
+            ),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildMainPhoto(context),
+          const SizedBox(height: 18),
+          Text(
+            '${profile.name}, ${profile.age}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 25,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.location_on_outlined,
+                size: 18,
+                color: Colors.pink.shade400,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                profile.city,
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          if (profile.hasBio) ...[
+            const SizedBox(height: 16),
+            Text(
+              profile.bio,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.5,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _InfoBadge(
+                icon: Icons.photo_library_outlined,
+                label: '${profile.photoCount} photo(s)',
+              ),
+              const SizedBox(width: 8),
+              _InfoBadge(
+                icon: Icons.cake_outlined,
+                label: '${profile.age} ans',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainPhoto(BuildContext context) {
+    if (!profile.hasPhotos) {
+      return Container(
+        width: double.infinity,
+        height: 280,
+        decoration: BoxDecoration(
+          color: Colors.pink.shade50,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_rounded,
+              size: 80,
+              color: Colors.pink.shade200,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Aucune photo',
+              style: TextStyle(
+                color: Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        _showPhoto(
+          context,
+          profile.photos.first,
+        );
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: SizedBox(
+          width: double.infinity,
+          height: 280,
+          child: _buildPhoto(
+            profile.photos.first,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInterestsCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Centres d’intérêt',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (profile.interests.isEmpty)
+            const Text(
+              'Aucun centre d’intérêt renseigné.',
+              style: TextStyle(
+                color: Colors.black54,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: profile.interests.map(
+                (interest) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.pink.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      interest,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                },
+              ).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLookingForCard() {
+    String lookingForText;
+
+    switch (profile.lookingFor) {
+      case 'relationship':
+        lookingForText = 'Une relation sérieuse ❤️';
+        break;
+      case 'serious':
+        lookingForText = 'Une relation sérieuse ❤️';
+        break;
+      case 'friendship':
+        lookingForText = 'Faire de nouvelles rencontres 🤝';
+        break;
+      case 'casual':
+        lookingForText = 'Une rencontre sans pression 😊';
+        break;
+      default:
+        lookingForText = profile.lookingFor.isEmpty
+            ? 'Pas encore renseigné'
+            : profile.lookingFor;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.pink.shade50,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.favorite_border_rounded,
+              color: Colors.pink,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Je recherche',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  lookingForText,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              18,
+              18,
+              18,
+              8,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Paramètres',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          _ProfileAction(
+            icon: Icons.edit_outlined,
+            title: 'Modifier mon profil',
+            onTap: () {
+              _showComingSoon(
+                context,
+                'La modification du profil sera bientôt disponible.',
+              );
+            },
+          ),
+          _ProfileAction(
+            icon: Icons.notifications_none_rounded,
+            title: 'Notifications',
+            onTap: () {
+              _showComingSoon(
+                context,
+                'Les notifications seront bientôt disponibles.',
+              );
+            },
+          ),
+          _ProfileAction(
+            icon: Icons.lock_outline_rounded,
+            title: 'Confidentialité et sécurité',
+            onTap: () {
+              _showComingSoon(
+                context,
+                'Les réglages de confidentialité seront bientôt disponibles.',
+              );
+            },
+          ),
+          _ProfileAction(
+            icon: Icons.help_outline_rounded,
+            title: 'Aide et assistance',
+            onTap: () {
+              _showComingSoon(
+                context,
+                'Le centre d’aide sera bientôt disponible.',
+              );
+            },
+          ),
+          _ProfileAction(
+            icon: Icons.info_outline_rounded,
+            title: 'À propos de Ose',
+            onTap: () {
+              showAboutDialog(
+                context: context,
+                applicationName: 'Ose',
+                applicationVersion: '1.0.0',
+                applicationLegalese:
+                    'Ose faire le premier pas ❤️',
+              );
+            },
+            showDivider: false,
+          ),
+        ],
       ),
     );
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  final String title;
+class _InfoBadge extends StatelessWidget {
   final IconData icon;
-  final Widget child;
+  final String label;
 
-  const _SectionCard({
-    required this.title,
+  const _InfoBadge({
     required this.icon,
-    required this.child,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 11,
+        vertical: 7,
+      ),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
+        color: Colors.pink.shade50,
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                color: Colors.pink,
-                size: 21,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          Icon(
+            icon,
+            size: 16,
+            color: Colors.pink,
           ),
-
-          const SizedBox(height: 12),
-
-          child,
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
-      ),
-    );
-  }
-        title: 'Aide et assistance',
-              onTap: () {
-                _showComingSoon(
-                  context,
-                  'Le centre d’aide sera ajouté prochainement.',
-                );
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            Center(
-              child: Text(
-                'Ose faire le premier pas. ❤️',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -405,59 +569,55 @@ class _ProfileAction extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
+  final bool showDivider;
 
   const _ProfileAction({
     required this.icon,
     required this.title,
     required this.onTap,
+    this.showDivider = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 8),
-      color: Colors.grey.shade50,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 14,
+    return Column(
+      children: [
+        ListTile(
+          onTap: onTap,
+          leading: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.pink.shade50,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              color: Colors.pink,
+              size: 21,
+            ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.pink,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey.shade500,
-              ),
-            ],
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          trailing: const Icon(
+            Icons.chevron_right_rounded,
+            color: Colors.black38,
           ),
         ),
-      ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            indent: 76,
+            endIndent: 18,
+            color: Colors.grey.shade100,
+          ),
+      ],
     );
   }
 }
