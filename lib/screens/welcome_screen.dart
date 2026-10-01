@@ -8,77 +8,82 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.pink.shade50,
-              Colors.white,
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Positioned(
-                top: 35,
-                right: -25,
-                child: _DecorativeCircle(
-                  size: 95,
-                  color: Colors.pink.shade100,
+      backgroundColor: const Color(0xFFFFF8FB),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Cercle décoratif en haut à droite
+            Positioned(
+              top: 0,
+              right: -35,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF7B6CF),
+                  shape: BoxShape.circle,
                 ),
               ),
+            ),
 
-              Positioned(
-                top: 150,
-                left: -35,
-                child: _DecorativeCircle(
-                  size: 80,
-                  color: Colors.pink.shade50,
+            // Cercle décoratif à gauche
+            Positioned(
+              top: 250,
+              left: -65,
+              child: Container(
+                width: 155,
+                height: 155,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFBE1EB),
+                  shape: BoxShape.circle,
                 ),
               ),
+            ),
 
-              Positioned(
-                bottom: 170,
-                right: -30,
-                child: _DecorativeCircle(
-                  size: 70,
-                  color: Colors.pink.shade50,
+            // Cercle décoratif en bas à droite
+            Positioned(
+              bottom: 180,
+              right: -45,
+              child: Container(
+                width: 125,
+                height: 125,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFBE1EB),
+                  shape: BoxShape.circle,
                 ),
               ),
+            ),
 
-              Padding(
+            SingleChildScrollView(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 20,
+                  horizontal: 28,
                 ),
                 child: Column(
                   children: [
-                    const Spacer(),
+                    const SizedBox(height: 80),
 
+                    // Logo
                     Container(
-                      width: 125,
-                      height: 125,
+                      width: 245,
+                      height: 245,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Colors.pink.shade300,
-                            Colors.pink.shade600,
+                            Color(0xFFEF4B8A),
+                            Color(0xFFE6005C),
                           ],
                         ),
-                        shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.pink.withValues(
-                              alpha: 0.22,
-                            ),
-                            blurRadius: 25,
-                            offset: const Offset(0, 10),
+                            color: const Color(0xFFE6005C)
+                                .withValues(alpha: 0.20),
+                            blurRadius: 30,
+                            spreadRadius: 5,
+                            offset: const Offset(0, 12),
                           ),
                         ],
                       ),
@@ -86,197 +91,190 @@ class WelcomeScreen extends StatelessWidget {
                         child: Text(
                           '❤️',
                           style: TextStyle(
-                            fontSize: 58,
+                            fontSize: 90,
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 55),
 
+                    // Nom de l'application
                     const Text(
                       'Ose',
                       style: TextStyle(
-                        fontSize: 48,
+                        fontSize: 58,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -1,
+                        color: Colors.black,
+                        height: 1,
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 25),
 
-                    Text(
+                    // Slogan principal
+                    const Text(
                       'Ose faire le premier pas.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.pink.shade700,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFB51F61),
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 25),
 
-                    Text(
-                      'Une application pensée pour les '
-                      'personnes qui préfèrent prendre leur temps '
-                      'et faire de vraies rencontres.',
+                    // Description
+                    const Text(
+                      'Une application pensée pour les personnes qui '
+                      'préfèrent prendre leur temps et faire de vraies '
+                      'rencontres.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 15.5,
-                        height: 1.5,
-                        color: Colors.grey.shade700,
+                        fontSize: 20,
+                        height: 1.45,
+                        color: Color(0xFF666666),
                       ),
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 40),
 
+                    // Les 3 avantages
                     Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
-                      children: [
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: const [
                         _FeatureItem(
-                          icon: Icons.favorite_outline,
-                          text: 'Rencontres',
+                          icon: Icons.favorite_border,
+                          label: 'Rencontres',
                         ),
-                        const SizedBox(width: 16),
                         _FeatureItem(
                           icon: Icons.shield_outlined,
-                          text: 'Sécurisé',
+                          label: 'Sécurisé',
                         ),
-                        const SizedBox(width: 16),
                         _FeatureItem(
                           icon: Icons.chat_bubble_outline,
-                          text: 'Échanges',
+                          label: 'Échanges',
                         ),
                       ],
                     ),
 
-                    const Spacer(),
+                    const SizedBox(height: 55),
 
+                    // Bouton créer un compte
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
+                      height: 72,
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
+                              builder: (context) =>
                                   const RegisterScreen(),
                             ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.pink,
+                          backgroundColor: const Color(0xFFED1767),
                           foregroundColor: Colors.white,
-                          elevation: 5,
-                          shadowColor: Colors.pink
+                          elevation: 6,
+                          shadowColor: const Color(0xFFED1767)
                               .withValues(alpha: 0.25),
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(30),
                           ),
                         ),
                         child: const Text(
                           'Créer mon compte',
                           style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 22),
 
+                    // Bouton connexion
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
+                      height: 72,
                       child: OutlinedButton(
                         onPressed: () {
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(
+                          ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                'La connexion sera ajoutée '
-                                'prochainement.',
+                                'La connexion sera bientôt disponible.',
                               ),
-                              behavior:
-                                  SnackBarBehavior.floating,
                             ),
                           );
                         },
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.pink.shade700,
-                          side: BorderSide(
-                            color: Colors.pink.shade200,
+                          foregroundColor: const Color(0xFF9F2458),
+                          side: const BorderSide(
+                            color: Color(0xFFD98AAE),
+                            width: 2,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(30),
                           ),
                         ),
                         child: const Text(
                           "J'ai déjà un compte",
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 35),
 
-                    Text(
-                      '🔒 Application réservée aux adultes.',
+                    // Mention adulte
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '🔒',
+                          style: TextStyle(
+                            fontSize: 18,
+                          ),
+                        ),
+                        SizedBox(width: 7),
+                        Text(
+                          'Application réservée aux adultes.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF777777),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // NOUVEAU TEXTE
+                    const Text(
+                      'Ici, pas de pression. Juste de belles rencontres. 💕',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFFAAAAAA),
                       ),
                     ),
 
-                    const SizedBox(height: 8),
-
-                    Text(
-                      'Ose faire le premier pas. ❤️',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 25),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-class _DecorativeCircle extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _DecorativeCircle({
-    required this.size,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
       ),
     );
   }
@@ -284,11 +282,11 @@ class _DecorativeCircle extends StatelessWidget {
 
 class _FeatureItem extends StatelessWidget {
   final IconData icon;
-  final String text;
+  final String label;
 
   const _FeatureItem({
     required this.icon,
-    required this.text,
+    required this.label,
   });
 
   @override
@@ -297,16 +295,16 @@ class _FeatureItem extends StatelessWidget {
       children: [
         Icon(
           icon,
-          size: 20,
-          color: Colors.pink.shade600,
+          size: 38,
+          color: const Color(0xFFC52A70),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
-          text,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+          label,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF666666),
           ),
         ),
       ],
