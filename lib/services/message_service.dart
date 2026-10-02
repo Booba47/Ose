@@ -1,25 +1,54 @@
+import '../models/chat_message.dart';
 import '../models/dating_profile.dart';
 
 class MessageService {
-  static final Map<String, List<String>> _messages = {
+  static final Map<String, List<ChatMessage>> _messages = {
     'profile_1': [
-      'Salut 😊',
-      'Content(e) de faire ta connaissance !',
+      ChatMessage(
+        id: 'message_1',
+        profileId: 'profile_1',
+        text: 'Salut 😊',
+        isMine: false,
+        sentAt: DateTime(2026, 1, 1, 18, 30),
+        isRead: true,
+      ),
+      ChatMessage(
+        id: 'message_2',
+        profileId: 'profile_1',
+        text: 'Content(e) de faire ta connaissance !',
+        isMine: false,
+        sentAt: DateTime(2026, 1, 1, 18, 31),
+        isRead: true,
+      ),
     ],
     'profile_3': [
-      'Bonjour 😊',
-      'Ravie de discuter avec toi !',
+      ChatMessage(
+        id: 'message_3',
+        profileId: 'profile_3',
+        text: 'Bonjour 😊',
+        isMine: false,
+        sentAt: DateTime(2026, 1, 2, 19, 15),
+        isRead: true,
+      ),
+      ChatMessage(
+        id: 'message_4',
+        profileId: 'profile_3',
+        text: 'Ravie de discuter avec toi !',
+        isMine: false,
+        sentAt: DateTime(2026, 1, 2, 19, 16),
+        isRead: true,
+      ),
     ],
   };
 
-  /// Retourne les messages d'une conversation.
-  static List<String> getMessages(DatingProfile profile) {
+  static List<ChatMessage> getMessages(
+    DatingProfile profile,
+  ) {
     return List.unmodifiable(
       _messages[profile.id] ?? [],
     );
   }
 
-  /// Ajoute un message à une conversation.
   static Future<void> sendMessage({
     required DatingProfile profile,
     required String message,
@@ -30,33 +59,70 @@ class MessageService {
       return;
     }
 
-    _messages.putIfAbsent(
-      profile.id,
-      () => [],
+    final messages =
+        _messages.putIfAbsent(profile.id, () => []);
+
+    messages.add(
+      ChatMessage(
+        id: 'message_${DateTime.now().microsecondsSinceEpoch}',
+        profileId: profile.id,
+        text: text,
+        isMine: true,
+        sentAt: DateTime.now(),
+        isRead: false,
+      ),
     );
-
-    _messages[profile.id]!.add(text);
   }
 
-  /// Indique si une conversation existe.
-  static bool hasConversation(DatingProfile profile) {
-    return _messages.containsKey(profile.id);
+  static Future<void> markAsRead(
+    DatingProfile profile,
+  ) async {
+    final messages = _messages[profile.id];
+
+    if (messages == null) {
+      return;
+    }
+
+    for (var i = 0; i < messages.length; i++) {
+      final message = messages[i];
+
+      if (!message.isMine && !message.isRead) {
+        messages[i] = message.copyWith(
+          isRead: true,
+        );
+      }
+    }
   }
 
-  /// Supprime une conversation.
+  static bool hasConversation(
+    DatingProfile profile,
+  ) {
+    final messages = _messages[profile.id];
+    return messages != null && messages.isNotEmpty;
+  }
+
+  static ChatMessage? getLastMessage(
+    DatingProfile profile,
+  ) {
+    final messages = _messages[profile.id];
+
+    if (messages == null || messages.isEmpty) {
+      return null;
+    }
+
+    return messages.last;
+  }
+
   static Future<void> deleteConversation(
     DatingProfile profile,
   ) async {
     _messages.remove(profile.id);
   }
 
-  /// Supprime toutes les conversations.
   static Future<void> clear() async {
     _messages.clear();
   }
 
-  /// Nombre de conversations.
-  static int get conversationCount {
-    return _messages.length;
-  }
+  static int get conversationCount =>
+      _messages.length;
 }
