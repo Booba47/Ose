@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/user_profile.dart';
+import '../services/user_service.dart';
 import 'settings_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final UserProfile profile;
 
   const ProfileScreen({
@@ -13,389 +14,296 @@ class ProfileScreen extends StatelessWidget {
     required this.profile,
   });
 
-  String _localPath(String path) {
-    if (path.startsWith('file://')) {
-      return path.substring(7);
-    }
+  @override
+  State<ProfileScreen> createState() =>
+      _ProfileScreenState();
+}
 
-    return path;
+class _ProfileScreenState extends State<ProfileScreen> {
+  late UserProfile _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _profile = widget.profile;
+    _loadProfile();
   }
 
-  bool _isLocalPhoto(String path) {
-    return path.startsWith('/') || path.startsWith('file://');
+  Future<void> _loadProfile() async {
+    final savedProfile =
+        await UserService.getProfile();
+
+    if (!mounted || savedProfile == null) {
+      return;
+    }
+
+    setState(() {
+      _profile = savedProfile;
+    });
+  }
+
+  void _openSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SettingsScreen(),
+      ),
+    );
   }
 
   Widget _buildPhoto(String path) {
-    if (_isLocalPhoto(path)) {
-      return Image.file(
-        File(_localPath(path)),
+    final isNetworkImage =
+        path.startsWith('http://') ||
+        path.startsWith('https://');
+
+    if (isNetworkImage) {
+      return Image.network(
+        path,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
+        errorBuilder: (_, __, ___) {
           return const Center(
             child: Icon(
-              Icons.image_not_supported_outlined,
-              color: Color(0xFFCCCCCC),
-              size: 35,
+              Icons.person,
+              size: 50,
+              color: Colors.black26,
             ),
           );
         },
       );
     }
 
-    return Image.network(
-      path,
+    return Image.file(
+      File(path),
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
+      errorBuilder: (_, __, ___) {
         return const Center(
           child: Icon(
-            Icons.image_not_supported_outlined,
-            color: Color(0xFFCCCCCC),
-            size: 35,
+            Icons.person,
+            size: 50,
+            color: Colors.black26,
           ),
         );
       },
     );
   }
 
-  void _showComingSoon(
-    BuildContext context,
-    String message,
-  ) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFFE6005C);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8FB),
+      backgroundColor: const Color(0xFFFFF7FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF8FB),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
         title: const Text(
           'Mon profil',
           style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
           IconButton(
-            tooltip: 'Paramètres',
+            onPressed: _openSettings,
             icon: const Icon(
               Icons.settings_outlined,
-              color: Color(0xFFC52A70),
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
-              );
-            },
           ),
-          const SizedBox(width: 6),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          18,
-          12,
-          18,
-          30,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: RefreshIndicator(
+        color: primaryColor,
+        onRefresh: _loadProfile,
+        child: ListView(
+          physics:
+              const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            8,
+            20,
+            32,
+          ),
           children: [
-            // Galerie photos
-            if (profile.photos.isNotEmpty)
+            if (_profile.photos.isNotEmpty)
               SizedBox(
-                height: 220,
+                height: 230,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: profile.photos.length,
-                  separatorBuilder: (context, index) {
-                    return const SizedBox(width: 12);
-                  },
+                  itemCount: _profile.photos.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(width: 12),
                   itemBuilder: (context, index) {
-                    return _PhotoTile(
-                      photo: profile.photos[index],
-                      child: _buildPhoto(
-                        profile.photos[index],
+                    return ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(22),
+                      child: SizedBox(
+                        width: 180,
+                        child: _buildPhoto(
+                          _profile.photos[index],
+                        ),
                       ),
-                      isMain: index == 0,
                     );
                   },
                 ),
               )
             else
               Container(
-                height: 220,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE5EF),
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.person_outline,
-                      size: 70,
-                      color: Color(0xFFD98AAE),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Aucune photo',
-                      style: TextStyle(
-                        color: Color(0xFF9F2458),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 22),
-
-            // Informations principales
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(26),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 18,
-                    offset: const Offset(0, 7),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${profile.name}, ${profile.age}',
-                          style: const TextStyle(
-                            fontSize: 27,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFE5EF),
-                          borderRadius:
-                              BorderRadius.circular(20),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.favorite,
-                              size: 15,
-                              color: Color(0xFFC52A70),
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              'Ose',
-                              style: TextStyle(
-                                color: Color(0xFFC52A70),
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  _InfoRow(
-                    icon: Icons.location_on_outlined,
-                    text: profile.city.isEmpty
-                        ? 'Ville non renseignée'
-                        : profile.city,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const Text(
-                    'À propos de moi',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF9F2458),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    profile.bio.trim().isEmpty
-                        ? 'Aucune description pour le moment.'
-                        : profile.bio,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      height: 1.45,
-                      color: Color(0xFF666666),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Centres d'intérêt
-            if (profile.interests.isNotEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(22),
+                height: 230,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 15,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+                  borderRadius:
+                      BorderRadius.circular(22),
                 ),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Mes centres d’intérêt',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF9F2458),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: profile.interests.map(
-                        (interest) {
-                          return Container(
-                            padding:
-                                const EdgeInsets.symmetric(
-                              horizontal: 13,
-                              vertical: 9,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFE8F0),
-                              borderRadius:
-                                  BorderRadius.circular(22),
-                            ),
-                            child: Text(
-                              interest,
-                              style: const TextStyle(
-                                color: Color(0xFFC52A70),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          );
-                        },
-                      ).toList(),
-                    ),
-                  ],
+                child: const Center(
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 70,
+                    color: Colors.black26,
+                  ),
                 ),
               ),
 
             const SizedBox(height: 20),
 
-            // Recherche
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(26),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Je recherche',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF9F2458),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.favorite_border,
-                        color: Color(0xFFC52A70),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          profile.lookingFor.isEmpty
-                              ? 'Non renseigné'
-                              : profile.lookingFor,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            Text(
+              '${_profile.name}, ${_profile.age}',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
               ),
             ),
+
+            const SizedBox(height: 6),
+
+            Row(
+              children: [
+                const Icon(
+                  Icons.location_on_outlined,
+                  size: 18,
+                  color: Colors.black54,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _profile.city,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            if (_profile.hasBio) ...[
+              const Text(
+                'À propos de moi',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _profile.bio,
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.5,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            const Text(
+              'Mes centres d’intérêt',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            if (_profile.interests.isEmpty)
+              const Text(
+                'Aucun centre d’intérêt ajouté.',
+                style: TextStyle(
+                  color: Colors.black54,
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _profile.interests
+                    .map(
+                      (interest) => Chip(
+                        label: Text(interest),
+                        backgroundColor:
+                            primaryColor.withValues(
+                          alpha: 0.08,
+                        ),
+                        side: BorderSide.none,
+                      ),
+                    )
+                    .toList(),
+              ),
 
             const SizedBox(height: 24),
 
-            // Modifier le profil
+            const Text(
+              'Je recherche',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                    BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.favorite_border,
+                    color: primaryColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _profile.lookingFor,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
             SizedBox(
-              width: double.infinity,
-              height: 58,
-              child: ElevatedButton.icon(
+              height: 54,
+              child: OutlinedButton.icon(
                 onPressed: () {
-                  _showComingSoon(
-                    context,
-                    'La modification du profil sera bientôt disponible.',
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'La modification du profil sera disponible prochainement.',
+                      ),
+                      behavior:
+                          SnackBarBehavior.floating,
+                    ),
                   );
                 },
                 icon: const Icon(
@@ -403,124 +311,22 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 label: const Text(
                   'Modifier mon profil',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      const Color(0xFFED1767),
-                  foregroundColor: Colors.white,
-                  elevation: 3,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: primaryColor,
+                  side: const BorderSide(
+                    color: primaryColor,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius:
+                        BorderRadius.circular(16),
                   ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            const Center(
-              child: Text(
-                'Ose faire le premier pas. 💕',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFFAAAAAA),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _InfoRow({
-    required this.icon,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Icon(
-          Icons.location_on_outlined,
-          color: Color(0xFFC52A70),
-          size: 21,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: Color(0xFF777777),
-              fontSize: 15,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PhotoTile extends StatelessWidget {
-  final String photo;
-  final Widget child;
-  final bool isMain;
-
-  const _PhotoTile({
-    required this.photo,
-    required this.child,
-    required this.isMain,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Container(
-            width: 165,
-            height: 220,
-            color: const Color(0xFFFFE5EF),
-            child: child,
-          ),
-        ),
-        if (isMain)
-          Positioned(
-            left: 10,
-            bottom: 10,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: const Text(
-                'Photo principale',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }
