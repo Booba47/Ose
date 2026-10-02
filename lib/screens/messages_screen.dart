@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../models/dating_profile.dart';
+import '../services/block_service.dart';
 import '../services/dating_profile_service.dart';
 import '../services/match_service.dart';
+import '../services/message_service.dart';
 import 'chat_screen.dart';
 
 class MessagesScreen extends StatefulWidget {
@@ -27,8 +29,19 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final profiles = DatingProfileService.getProfiles();
 
     _conversations = profiles.where((profile) {
-      return MatchService.isMatched(profile);
+      return MatchService.isMatched(profile) &&
+          !BlockService.isBlocked(profile);
     }).toList();
+  }
+
+  Future<void> _refreshConversations() async {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _loadConversations();
+    });
   }
 
   void _openChat(DatingProfile profile) {
@@ -39,7 +52,260 @@ class _MessagesScreenState extends State<MessagesScreen> {
           profile: profile,
         ),
       ),
+    ).then((_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _loadConversations();
+      });
+    });
+  }
+
+  Future<void> _removeConversation(
+    DatingProfile profile,
+  ) async {
+    await MessageService.deleteConversation(profile);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _loadConversations();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'La conversation avec ${profile.name} a été supprimée.',
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
     );
+  }
+
+  Future<void> _blockProfile(
+    DatingProfile profile,
+  ) async {
+    await BlockService.blockProfile(profile);
+    await MessageService.deleteConversation(profile);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      MatchService.removeMatch(profile);
+      _loadConversations();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${profile.name} a été bloqué(e).',
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+    );
+  }
+
+  void _showConversationOptions(
+    DatingProfile profile,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(
+            22,
+            12,
+            22,
+            28,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(30),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 45,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                profile.name,
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 18),
+              ListTile(
+                leading: const Icon(
+                  Icons.chat_bubble_outline,
+                  color: Color(0xFFED1767),
+                ),
+                title: const Text(
+                  'Ouvrir la conversation',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openChat(profile);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: Color(0xFFC52A70),
+                ),
+                title: const Text(
+                  'Supprimer la conversation',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDeleteConversation(profile);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.block_outlined,
+                  color: Color(0xFFD32F2F),
+                ),
+                title: const Text(
+                  'Bloquer cette personne',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmBlock(profile);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteConversation(
+    DatingProfile profile,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Supprimer la conversation ?',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Text(
+            'Les messages avec ${profile.name} seront supprimés de cet appareil.',
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _removeConversation(profile);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFED1767),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmBlock(DatingProfile profile) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Bloquer cette personne ?',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Text(
+            '${profile.name} ne pourra plus apparaître dans tes conversations et tes matchs.',
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _blockProfile(profile);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD32F2F),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Bloquer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getLastMessage(
+    DatingProfile profile,
+  ) {
+    final messages = MessageService.getMessages(profile);
+
+    if (messages.isEmpty) {
+      return 'Commence la conversation 💬';
+    }
+
+    return messages.last;
   }
 
   @override
@@ -53,48 +319,62 @@ class _MessagesScreenState extends State<MessagesScreen> {
             Expanded(
               child: _conversations.isEmpty
                   ? _buildEmptyState()
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(
-                        18,
-                        5,
-                        18,
-                        25,
+                  : RefreshIndicator(
+                      color: const Color(0xFFED1767),
+                      onRefresh: _refreshConversations,
+                      child: ListView(
+                        physics:
+                            const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(
+                          18,
+                          5,
+                          18,
+                          25,
+                        ),
+                        children: [
+                          _buildTopCard(),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Tes conversations (${_conversations.length})',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ..._conversations.map(
+                            (profile) => Padding(
+                              padding:
+                                  const EdgeInsets.only(
+                                bottom: 12,
+                              ),
+                              child: _ConversationCard(
+                                profile: profile,
+                                lastMessage:
+                                    _getLastMessage(profile),
+                                onTap: () {
+                                  _openChat(profile);
+                                },
+                                onMore: () {
+                                  _showConversationOptions(
+                                    profile,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Center(
+                            child: Text(
+                              'Ose faire le premier pas. 💕',
+                              style: TextStyle(
+                                color: Color(0xFFAAAAAA),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      children: [
-                        _buildTopCard(),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Tes conversations',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ..._conversations.map(
-                          (profile) => Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 12,
-                            ),
-                            child: _ConversationCard(
-                              profile: profile,
-                              onTap: () {
-                                _openChat(profile);
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Center(
-                          child: Text(
-                            'Ose faire le premier pas. 💕',
-                            style: TextStyle(
-                              color: Color(0xFFAAAAAA),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
             ),
           ],
@@ -115,7 +395,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
         children: [
           const Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   'Messages',
@@ -189,7 +470,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
           const SizedBox(width: 15),
           const Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   'La conversation commence ici.',
@@ -221,7 +503,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(30),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             Container(
               width: 130,
@@ -286,11 +569,15 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
 class _ConversationCard extends StatelessWidget {
   final DatingProfile profile;
+  final String lastMessage;
   final VoidCallback onTap;
+  final VoidCallback onMore;
 
   const _ConversationCard({
     required this.profile,
+    required this.lastMessage,
     required this.onTap,
+    required this.onMore,
   });
 
   @override
@@ -367,7 +654,8 @@ class _ConversationCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             '${profile.name}, ${profile.age}',
-                            overflow: TextOverflow.ellipsis,
+                            overflow:
+                                TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w900,
@@ -384,11 +672,11 @@ class _ConversationCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Salut 😊',
+                    Text(
+                      lastMessage,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF777777),
                       ),
@@ -423,17 +711,12 @@ class _ConversationCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                width: 43,
-                height: 43,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE5EF),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFFC52A70),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: onMore,
+                icon: const Icon(
+                  Icons.more_vert,
+                  color: Color(0xFFAAAAAA),
                 ),
               ),
             ],
