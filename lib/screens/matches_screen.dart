@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/dating_profile.dart';
+import '../services/block_service.dart';
 import '../services/dating_profile_service.dart';
 import '../services/match_service.dart';
 import 'chat_screen.dart';
@@ -27,7 +28,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
     final profiles = DatingProfileService.getProfiles();
 
     _matches = profiles.where((profile) {
-      return MatchService.isMatched(profile);
+      return MatchService.isMatched(profile) &&
+          !BlockService.isBlocked(profile);
     }).toList();
   }
 
@@ -50,6 +52,33 @@ class _MatchesScreenState extends State<MatchesScreen> {
     );
   }
 
+  Future<void> _blockProfile(
+    DatingProfile profile,
+  ) async {
+    await BlockService.blockProfile(profile);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      MatchService.removeMatch(profile);
+      _loadMatches();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${profile.name} a été bloqué(e).',
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+    );
+  }
+
   void _openChat(DatingProfile profile) {
     Navigator.push(
       context,
@@ -61,6 +90,142 @@ class _MatchesScreenState extends State<MatchesScreen> {
     );
   }
 
+  void _showProfileOptions(
+    DatingProfile profile,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(
+            22,
+            12,
+            22,
+            28,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(30),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 45,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                profile.name,
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 18),
+              ListTile(
+                leading: const Icon(
+                  Icons.chat_bubble_outline,
+                  color: Color(0xFFED1767),
+                ),
+                title: const Text(
+                  'Envoyer un message',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openChat(profile);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.person_remove_outlined,
+                  color: Color(0xFFC52A70),
+                ),
+                title: const Text(
+                  'Retirer le Match',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removeMatch(profile);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.block_outlined,
+                  color: Color(0xFFD32F2F),
+                ),
+                title: const Text(
+                  'Bloquer cette personne',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmBlock(profile);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmBlock(DatingProfile profile) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Bloquer cette personne ?',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Text(
+            '${profile.name} ne sera plus affiché(e) dans tes rencontres.',
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _blockProfile(profile);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD32F2F),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Bloquer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,7 +234,6 @@ class _MatchesScreenState extends State<MatchesScreen> {
         child: Column(
           children: [
             _buildHeader(),
-
             Expanded(
               child: _matches.isEmpty
                   ? _buildEmptyState()
@@ -91,22 +255,19 @@ class _MatchesScreenState extends State<MatchesScreen> {
                         ),
                         children: [
                           _buildIntroCard(),
-
                           const SizedBox(height: 20),
-
-                          const Text(
-                            'Tes rencontres',
-                            style: TextStyle(
+                          Text(
+                            'Tes rencontres (${_matches.length})',
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
-
                           const SizedBox(height: 12),
-
                           ..._matches.map(
                             (profile) => Padding(
-                              padding: const EdgeInsets.only(
+                              padding:
+                                  const EdgeInsets.only(
                                 bottom: 14,
                               ),
                               child: _MatchCard(
@@ -117,12 +278,15 @@ class _MatchesScreenState extends State<MatchesScreen> {
                                 onRemove: () {
                                   _removeMatch(profile);
                                 },
+                                onMore: () {
+                                  _showProfileOptions(
+                                    profile,
+                                  );
+                                },
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 10),
-
                           const Center(
                             child: Text(
                               'Ose faire le premier pas. 💕',
@@ -176,7 +340,6 @@ class _MatchesScreenState extends State<MatchesScreen> {
               ],
             ),
           ),
-
           Container(
             width: 45,
             height: 45,
@@ -227,9 +390,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
               ),
             ),
           ),
-
           const SizedBox(width: 15),
-
           const Expanded(
             child: Column(
               crossAxisAlignment:
@@ -284,9 +445,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
-
             const Text(
               'Pas encore de Match',
               textAlign: TextAlign.center,
@@ -295,9 +454,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 fontWeight: FontWeight.w900,
               ),
             ),
-
             const SizedBox(height: 12),
-
             const Text(
               'Continue à découvrir de nouvelles personnes. '
               'Un Match peut arriver à tout moment.',
@@ -308,9 +465,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 color: Color(0xFF777777),
               ),
             ),
-
             const SizedBox(height: 25),
-
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 18,
@@ -339,11 +494,13 @@ class _MatchCard extends StatelessWidget {
   final DatingProfile profile;
   final VoidCallback onTap;
   final VoidCallback onRemove;
+  final VoidCallback onMore;
 
   const _MatchCard({
     required this.profile,
     required this.onTap,
     required this.onRemove,
+    required this.onMore,
   });
 
   @override
@@ -369,7 +526,6 @@ class _MatchCard extends StatelessWidget {
             padding: const EdgeInsets.all(15),
             child: Row(
               children: [
-                // Avatar
                 Stack(
                   children: [
                     Container(
@@ -393,7 +549,6 @@ class _MatchCard extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     if (profile.verified)
                       Positioned(
                         right: 0,
@@ -401,7 +556,8 @@ class _MatchCard extends StatelessWidget {
                         child: Container(
                           width: 24,
                           height: 24,
-                          decoration: const BoxDecoration(
+                          decoration:
+                              const BoxDecoration(
                             color: Color(0xFF3298DB),
                             shape: BoxShape.circle,
                           ),
@@ -414,33 +570,21 @@ class _MatchCard extends StatelessWidget {
                       ),
                   ],
                 ),
-
                 const SizedBox(width: 14),
-
-                // Informations
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              '${profile.name}, ${profile.age}',
-                              overflow:
-                                  TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        '${profile.name}, ${profile.age}',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-
                       const SizedBox(height: 4),
-
                       Row(
                         children: [
                           const Icon(
@@ -462,9 +606,7 @@ class _MatchCard extends StatelessWidget {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 8),
-
                       const Row(
                         children: [
                           Icon(
@@ -485,16 +627,14 @@ class _MatchCard extends StatelessWidget {
                     ],
                   ),
                 ),
-
                 const SizedBox(width: 8),
-
-                // Bouton message
                 Container(
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
                     color: const Color(0xFFED1767),
-                    borderRadius: BorderRadius.circular(17),
+                    borderRadius:
+                        BorderRadius.circular(17),
                   ),
                   child: const Icon(
                     Icons.chat_bubble_outline,
@@ -502,10 +642,7 @@ class _MatchCard extends StatelessWidget {
                     size: 23,
                   ),
                 ),
-
                 const SizedBox(width: 4),
-
-                // Menu
                 PopupMenuButton<String>(
                   icon: const Icon(
                     Icons.more_vert,
@@ -515,9 +652,26 @@ class _MatchCard extends StatelessWidget {
                     if (value == 'remove') {
                       onRemove();
                     }
+
+                    if (value == 'options') {
+                      onMore();
+                    }
                   },
                   itemBuilder: (context) {
                     return const [
+                      PopupMenuItem<String>(
+                        value: 'options',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.more_horiz,
+                              color: Color(0xFFC52A70),
+                            ),
+                            SizedBox(width: 10),
+                            Text('Plus d’options'),
+                          ],
+                        ),
+                      ),
                       PopupMenuItem<String>(
                         value: 'remove',
                         child: Row(
