@@ -299,13 +299,17 @@ class _MessagesScreenState extends State<MessagesScreen> {
   String _getLastMessage(
     DatingProfile profile,
   ) {
-    final messages = MessageService.getMessages(profile);
+    final lastMessage = MessageService.getLastMessage(profile);
 
-    if (messages.isEmpty) {
+    if (lastMessage == null) {
       return 'Commence la conversation 💬';
     }
 
-    return messages.last;
+    if (lastMessage.isMine) {
+      return 'Toi : ${lastMessage.text}';
+    }
+
+    return lastMessage.text;
   }
 
   @override
@@ -344,8 +348,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           const SizedBox(height: 12),
                           ..._conversations.map(
                             (profile) => Padding(
-                              padding:
-                                  const EdgeInsets.only(
+                              padding: const EdgeInsets.only(
                                 bottom: 12,
                               ),
                               child: _ConversationCard(
