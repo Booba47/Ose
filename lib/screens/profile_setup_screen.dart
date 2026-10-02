@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/user_profile.dart';
+import '../services/user_service.dart';
 import 'photo_setup_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -25,31 +26,25 @@ class _ProfileSetupScreenState
   final _cityController = TextEditingController();
   final _bioController = TextEditingController();
 
-  final List<String> _selectedInterests = [];
-
-  String _lookingFor = 'Une relation sérieuse';
-
-  final List<String> _interests = [
+  final List<String> _availableInterests = [
     '🎵 Musique',
-    '🎬 Films',
     '✈️ Voyage',
+    '🎬 Films',
     '🍳 Cuisine',
     '🎨 Art',
     '📚 Lecture',
     '🐾 Animaux',
+    '⚽ Sport',
     '☕ Sorties tranquilles',
-    '🏃 Sport',
     '🎮 Jeux vidéo',
     '🌿 Nature',
-    '📷 Photographie',
+    '📸 Photographie',
   ];
 
-  final List<String> _lookingForOptions = [
-    'Une relation sérieuse',
-    'Faire de nouvelles rencontres',
-    'Discuter et apprendre à se connaître',
-    'Voir où ça nous mène',
-  ];
+  final List<String> _selectedInterests = [];
+
+  String _lookingFor = 'Une relation sérieuse';
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -58,29 +53,7 @@ class _ProfileSetupScreenState
     super.dispose();
   }
 
-  void _toggleInterest(String interest) {
-    setState(() {
-      if (_selectedInterests.contains(interest)) {
-        _selectedInterests.remove(interest);
-      } else {
-        if (_selectedInterests.length >= 6) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Tu peux sélectionner jusqu’à 6 centres d’intérêt.',
-              ),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          return;
-        }
-
-        _selectedInterests.add(interest);
-      }
-    });
-  }
-
-  void _continue() {
+  Future<void> _continue() async {
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
@@ -88,16 +61,15 @@ class _ProfileSetupScreenState
     }
 
     if (_selectedInterests.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Sélectionne au moins un centre d’intérêt.',
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
+      _showMessage(
+        'Sélectionne au moins un centre d’intérêt.',
       );
       return;
     }
+
+    setState(() {
+      _isSaving = true;
+    });
 
     final profile = UserProfile(
       name: widget.name,
@@ -111,6 +83,16 @@ class _ProfileSetupScreenState
       photos: const [],
     );
 
+    await UserService.saveProfile(profile);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = false;
+    });
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -121,323 +103,323 @@ class _ProfileSetupScreenState
     );
   }
 
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFFE6005C);
+
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF7FA),
       appBar: AppBar(
-        title: const Text('Ton profil'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'Ton profil',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
+          child: ListView(
             padding: const EdgeInsets.fromLTRB(
-              20,
+              24,
               12,
-              20,
-              30,
+              24,
+              32,
             ),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Parle-nous un peu de toi',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+            children: [
+              const Text(
+                'Parle-nous un peu de toi 💕',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Ces informations permettront aux autres membres de mieux te découvrir.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.black54,
+                  height: 1.4,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              TextFormField(
+                controller: _cityController,
+                textCapitalization:
+                    TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: 'Ville',
+                  hintText: 'Ex. Paris',
+                  prefixIcon: const Icon(
+                    Icons.location_on_outlined,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
                   ),
                 ),
+                validator: (value) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
+                    return 'Entre ta ville.';
+                  }
 
-                const SizedBox(height: 8),
+                  return null;
+                },
+              ),
 
-                Text(
-                  'Ces informations permettront aux autres '
-                  'personnes de mieux te découvrir.',
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.4,
-                    color: Colors.grey.shade700,
-                  ),
-                ),
+              const SizedBox(height: 18),
 
-                const SizedBox(height: 26),
-
-                const Text(
-                  'Où habites-tu ?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                TextFormField(
-                  controller: _cityController,
-                  textCapitalization:
-                      TextCapitalization.words,
-                  decoration: InputDecoration(
-                    labelText: 'Ville',
-                    hintText: 'Ex. Paris',
-                    prefixIcon: const Icon(
-                      Icons.location_on_outlined,
+              TextFormField(
+                controller: _bioController,
+                maxLines: 5,
+                maxLength: 300,
+                textCapitalization:
+                    TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: 'À propos de toi',
+                  hintText:
+                      'Quelques mots pour te présenter...',
+                  alignLabelWithHint: true,
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(
+                      bottom: 80,
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(14),
-                    ),
-                  ),
-                  validator: (value) {
-                    final city = value?.trim() ?? '';
-
-                    if (city.isEmpty) {
-                      return 'Indique ta ville.';
-                    }
-
-                    if (city.length < 2) {
-                      return 'Ville invalide.';
-                    }
-
-                    if (city.length > 50) {
-                      return '50 caractères maximum.';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                const Text(
-                  'Présente-toi',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                TextFormField(
-                  controller: _bioController,
-                  maxLines: 5,
-                  maxLength: 300,
-                  textCapitalization:
-                      TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    labelText: 'Ma présentation',
-                    hintText:
-                        'Quelques mots sur toi...',
-                    alignLabelWithHint: true,
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.only(
-                        bottom: 70,
-                      ),
-                      child: Icon(
-                        Icons.edit_outlined,
-                      ),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(14),
+                    child: Icon(
+                      Icons.edit_note_outlined,
                     ),
                   ),
-                  validator: (value) {
-                    final bio = value?.trim() ?? '';
-
-                    if (bio.isEmpty) {
-                      return 'Écris quelques mots sur toi.';
-                    }
-
-                    if (bio.length < 10) {
-                      return '10 caractères minimum.';
-                    }
-
-                    return null;
-                  },
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
+              ),
 
-                const SizedBox(height: 22),
+              const SizedBox(height: 12),
 
-                Row(
+              const Text(
+                'Tes centres d’intérêt',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              const Text(
+                'Choisis jusqu’à 6 centres d’intérêt.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    _availableInterests.map((interest) {
+                  final selected =
+                      _selectedInterests
+                          .contains(interest);
+
+                  return FilterChip(
+                    label: Text(interest),
+                    selected: selected,
+                    selectedColor:
+                        primaryColor.withValues(
+                      alpha: 0.15,
+                    ),
+                    checkmarkColor: primaryColor,
+                    side: BorderSide(
+                      color: selected
+                          ? primaryColor
+                          : Colors.black12,
+                    ),
+                    onSelected: (value) {
+                      setState(() {
+                        if (value) {
+                          if (_selectedInterests
+                                  .length <
+                              6) {
+                            _selectedInterests
+                                .add(interest);
+                          } else {
+                            _showMessage(
+                              'Tu peux choisir au maximum 6 intérêts.',
+                            );
+                          }
+                        } else {
+                          _selectedInterests
+                              .remove(interest);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+
+              const SizedBox(height: 28),
+
+              const Text(
+                'Je recherche',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              RadioGroup<String>(
+                groupValue: _lookingFor,
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+
+                  setState(() {
+                    _lookingFor = value;
+                  });
+                },
+                child: Column(
                   children: [
-                    const Expanded(
-                      child: Text(
-                        'Mes centres d’intérêt',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    RadioListTile<String>(
+                      value: 'Une relation sérieuse',
+                      title: const Text(
+                        'Une relation sérieuse',
                       ),
+                      subtitle: const Text(
+                        'Construire quelque chose de durable',
+                      ),
+                      contentPadding:
+                          EdgeInsets.zero,
                     ),
-                    Text(
-                      '${_selectedInterests.length}/6',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
+                    RadioListTile<String>(
+                      value: 'Faire connaissance',
+                      title: const Text(
+                        'Faire connaissance',
+                      ),
+                      subtitle: const Text(
+                        'Prendre le temps de découvrir quelqu’un',
+                      ),
+                      contentPadding:
+                          EdgeInsets.zero,
+                    ),
+                    RadioListTile<String>(
+                      value: 'Une rencontre',
+                      title: const Text(
+                        'Une rencontre',
+                      ),
+                      subtitle: const Text(
+                        'Voir où la rencontre nous mène',
+                      ),
+                      contentPadding:
+                          EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(
+                    alpha: 0.07,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(16),
+                ),
+                child: const Row(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.favorite_border,
+                      color: primaryColor,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Sur Ose, prends ton temps. Le but est de créer de vraies connexions, sans pression.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ],
                 ),
+              ),
 
-                const SizedBox(height: 6),
+              const SizedBox(height: 24),
 
-                Text(
-                  'Choisis ceux qui te correspondent.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
+              SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  onPressed:
+                      _isSaving ? null : _continue,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor:
+                        primaryColor.withValues(
+                      alpha: 0.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(18),
+                    ),
+                    elevation: 0,
                   ),
-                ),
-
-                const SizedBox(height: 12),
-
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _interests.map(
-                    (interest) {
-                      final selected =
-                          _selectedInterests
-                              .contains(interest);
-
-                      return GestureDetector(
-                        onTap: () {
-                          _toggleInterest(interest);
-                        },
-                        child: AnimatedContainer(
-                          duration:
-                              const Duration(
-                            milliseconds: 180,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
                           ),
-                          padding:
-                              const EdgeInsets.symmetric(
-                            horizontal: 13,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? Colors.pink
-                                : Colors.pink.shade50,
-                            borderRadius:
-                                BorderRadius.circular(22),
-                            border: Border.all(
-                              color: selected
-                                  ? Colors.pink
-                                  : Colors.pink.shade100,
-                            ),
-                          ),
-                          child: Text(
-                            interest,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight:
-                                  FontWeight.w600,
-                              color: selected
-                                  ? Colors.white
-                                  : Colors.pink.shade800,
-                            ),
+                        )
+                      : const Text(
+                          'Continuer',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      );
-                    },
-                  ).toList(),
                 ),
-
-                const SizedBox(height: 26),
-
-                const Text(
-                  'Qu’est-ce que tu recherches ?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                Text(
-                  'Il n’y a pas de mauvaise réponse.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius:
-                        BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.grey.shade200,
-                    ),
-                  ),
-                  child: RadioGroup<String>(
-                    groupValue: _lookingFor,
-                    onChanged: (value) {
-                      if (value == null) {
-                        return;
-                      }
-
-                      setState(() {
-                        _lookingFor = value;
-                      });
-                    },
-                    child: Column(
-                      children:
-                          _lookingForOptions.map(
-                        (option) {
-                          return RadioListTile<String>(
-                            value: option,
-                            title: Text(
-                              option,
-                              style:
-                                  const TextStyle(
-                                fontSize: 14,
-                              ),
-                            ),
-                            activeColor: Colors.pink,
-                          );
-                        },
-                      ).toList(),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: _continue,
-                    child: const Text(
-                      'Continuer vers mes photos',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                Center(
-                  child: Text(
-                    'Tu pourras modifier ton profil plus tard.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
