@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/block_service.dart';
+import '../services/like_service.dart';
+import '../services/match_service.dart';
+import '../services/message_service.dart';
+import '../services/notification_service.dart';
+import '../services/photo_service.dart';
 import '../services/preferences_service.dart';
+import '../services/report_service.dart';
 import '../services/user_service.dart';
 import 'welcome_screen.dart';
 
@@ -9,12 +16,10 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() =>
-      _SettingsScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState
-    extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _showOnlineStatus = true;
   bool _showReadReceipts = true;
@@ -31,83 +36,58 @@ class _SettingsScreenState
         PreferencesService.showReadReceipts;
   }
 
-  Future<void> _toggleNotifications(
-    bool value,
-  ) async {
+  Future<void> _toggleNotifications(bool value) async {
     setState(() {
       _notificationsEnabled = value;
     });
 
-    await PreferencesService.setNotificationsEnabled(
-      value,
-    );
+    await PreferencesService.setNotificationsEnabled(value);
   }
 
-  Future<void> _toggleOnlineStatus(
-    bool value,
-  ) async {
+  Future<void> _toggleOnlineStatus(bool value) async {
     setState(() {
       _showOnlineStatus = value;
     });
 
-    await PreferencesService.setShowOnlineStatus(
-      value,
-    );
+    await PreferencesService.setShowOnlineStatus(value);
   }
 
-  Future<void> _toggleReadReceipts(
-    bool value,
-  ) async {
+  Future<void> _toggleReadReceipts(bool value) async {
     setState(() {
       _showReadReceipts = value;
     });
 
-    await PreferencesService.setShowReadReceipts(
-      value,
-    );
+    await PreferencesService.setShowReadReceipts(value);
   }
 
   Future<void> _logout() async {
-    final confirmed =
-        await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text(
-            'Se déconnecter ?',
-          ),
+          title: const Text('Se déconnecter ?'),
           content: const Text(
             'Tu pourras te reconnecter à ton compte plus tard.',
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('Annuler'),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-              child: const Text(
-                'Se déconnecter',
-              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Se déconnecter'),
             ),
           ],
         );
       },
     );
 
-    if (confirmed != true) {
-      return;
-    }
+    if (confirmed != true) return;
 
     await AuthService.signOut();
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
       context,
@@ -119,60 +99,48 @@ class _SettingsScreenState
   }
 
   Future<void> _deleteLocalData() async {
-    final confirmed =
-        await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text(
-            'Supprimer les données ?',
-          ),
+          title: const Text('Supprimer les données ?'),
           content: const Text(
-            'Cette action supprimera les données actuellement enregistrées sur cet appareil.',
+            'Cette action supprimera les données actuellement enregistrées sur cet appareil : profil, photos, likes, matchs, messages, notifications et blocages.',
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('Annuler'),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.red,
               ),
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-              child: const Text(
-                'Supprimer',
-              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Supprimer'),
             ),
           ],
         );
       },
     );
 
-    if (confirmed != true) {
-      return;
-    }
+    if (confirmed != true) return;
 
     await UserService.deleteProfile();
+    await PhotoService.clear();
+
+    LikeService.clear();
+    MatchService.clear();
+
+    await MessageService.clear();
+    await NotificationService.clear();
+    await ReportService.clear();
+    await BlockService.clear();
+
     await PreferencesService.clear();
     await AuthService.signOut();
 
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Les données locales ont été supprimées.',
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
       context,
@@ -192,9 +160,7 @@ class _SettingsScreenState
           content: Text(message),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text('Fermer'),
             ),
           ],
@@ -226,8 +192,7 @@ class _SettingsScreenState
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         children: children,
@@ -268,9 +233,7 @@ class _SettingsScreenState
           32,
         ),
         children: [
-          _buildSectionTitle(
-            'Notifications',
-          ),
+          _buildSectionTitle('Notifications'),
 
           _buildCard(
             children: [
@@ -280,21 +243,16 @@ class _SettingsScreenState
                 secondary: const Icon(
                   Icons.notifications_none_outlined,
                 ),
-                title: const Text(
-                  'Notifications',
-                ),
+                title: const Text('Notifications'),
                 subtitle: const Text(
                   'Recevoir les nouveaux messages et matchs',
                 ),
-                onChanged:
-                    _toggleNotifications,
+                onChanged: _toggleNotifications,
               ),
             ],
           ),
 
-          _buildSectionTitle(
-            'Confidentialité',
-          ),
+          _buildSectionTitle('Confidentialité'),
 
           _buildCard(
             children: [
@@ -304,14 +262,11 @@ class _SettingsScreenState
                 secondary: const Icon(
                   Icons.circle_outlined,
                 ),
-                title: const Text(
-                  'Statut en ligne',
-                ),
+                title: const Text('Statut en ligne'),
                 subtitle: const Text(
                   'Permettre aux autres de voir si tu es en ligne',
                 ),
-                onChanged:
-                    _toggleOnlineStatus,
+                onChanged: _toggleOnlineStatus,
               ),
               _buildDivider(),
               SwitchListTile(
@@ -326,28 +281,19 @@ class _SettingsScreenState
                 subtitle: const Text(
                   'Indiquer quand un message a été lu',
                 ),
-                onChanged:
-                    _toggleReadReceipts,
+                onChanged: _toggleReadReceipts,
               ),
             ],
           ),
 
-          _buildSectionTitle(
-            'Aide et informations',
-          ),
+          _buildSectionTitle('Aide et informations'),
 
           _buildCard(
             children: [
               ListTile(
-                leading: const Icon(
-                  Icons.help_outline,
-                ),
-                title: const Text(
-                  'Centre d’aide',
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                ),
+                leading: const Icon(Icons.help_outline),
+                title: const Text('Centre d’aide'),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showInfo(
                     'Centre d’aide',
@@ -363,9 +309,7 @@ class _SettingsScreenState
                 title: const Text(
                   'Conditions d’utilisation',
                 ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                ),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showInfo(
                     'Conditions d’utilisation',
@@ -381,9 +325,7 @@ class _SettingsScreenState
                 title: const Text(
                   'Politique de confidentialité',
                 ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                ),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showInfo(
                     'Confidentialité',
@@ -393,15 +335,9 @@ class _SettingsScreenState
               ),
               _buildDivider(),
               ListTile(
-                leading: const Icon(
-                  Icons.info_outline,
-                ),
-                title: const Text(
-                  'À propos de Ose',
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                ),
+                leading: const Icon(Icons.info_outline),
+                title: const Text('À propos de Ose'),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _showInfo(
                     'Ose',
@@ -412,9 +348,7 @@ class _SettingsScreenState
             ],
           ),
 
-          _buildSectionTitle(
-            'Compte',
-          ),
+          _buildSectionTitle('Compte'),
 
           _buildCard(
             children: [
@@ -423,9 +357,7 @@ class _SettingsScreenState
                   Icons.logout,
                   color: primaryColor,
                 ),
-                title: const Text(
-                  'Se déconnecter',
-                ),
+                title: const Text('Se déconnecter'),
                 onTap: _logout,
               ),
               _buildDivider(),
@@ -439,6 +371,9 @@ class _SettingsScreenState
                   style: TextStyle(
                     color: Colors.red,
                   ),
+                ),
+                subtitle: const Text(
+                  'Supprimer toutes les données locales',
                 ),
                 onTap: _deleteLocalData,
               ),
