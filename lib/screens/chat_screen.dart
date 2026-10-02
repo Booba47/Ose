@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/chat_message.dart';
 import '../models/dating_profile.dart';
 import '../services/block_service.dart';
 import '../services/message_service.dart';
@@ -24,11 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController =
       ScrollController();
 
-  late List<String> _messages;
-
-  // Les messages envoyés pendant cette session
-  // sont identifiés comme étant les nôtres.
-  final Set<String> _myMessages = {};
+  late List<ChatMessage> _messages;
 
   bool _isBlocked = false;
 
@@ -39,10 +36,25 @@ class _ChatScreenState extends State<ChatScreen> {
     _isBlocked = BlockService.isBlocked(widget.profile);
 
     _loadMessages();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markMessagesAsRead();
+      _scrollToBottom();
+    });
   }
 
   void _loadMessages() {
     _messages = MessageService.getMessages(widget.profile);
+  }
+
+  Future<void> _markMessagesAsRead() async {
+    await MessageService.markAsRead(widget.profile);
+
+    if (!mounted) return;
+
+    setState(() {
+      _loadMessages();
+    });
   }
 
   @override
@@ -64,12 +76,9 @@ class _ChatScreenState extends State<ChatScreen> {
       message: text,
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
-      _myMessages.add(text);
       _loadMessages();
     });
 
@@ -90,6 +99,13 @@ class _ChatScreenState extends State<ChatScreen> {
         curve: Curves.easeOut,
       );
     });
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+
+    return '$hour:$minute';
   }
 
   void _showOptions() {
@@ -135,6 +151,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: 'Voir le profil',
                 onTap: () {
                   Navigator.pop(context);
+
                   _showMessage(
                     'Le profil détaillé sera bientôt disponible.',
                   );
@@ -145,6 +162,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 title: 'Mettre la conversation en sourdine',
                 onTap: () {
                   Navigator.pop(context);
+
                   _showMessage(
                     'Les notifications pourront être désactivées ici.',
                   );
@@ -215,9 +233,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   widget.profile,
                 );
 
-                if (!mounted) {
-                  return;
-                }
+                if (!mounted) return;
 
                 Navigator.pop(context);
 
@@ -278,12 +294,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   widget.profile,
                 );
 
-                if (!mounted) {
-                  return;
-                }
+                if (!mounted) return;
 
                 setState(() {
                   _isBlocked = true;
+                  _messages = [];
                 });
 
                 Navigator.pop(context);
@@ -313,8 +328,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showReportDialog() {
-    final TextEditingController reasonController =
-        TextEditingController();
+    final reasonController = TextEditingController();
 
     showDialog<void>(
       context: context,
@@ -379,9 +393,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 reasonController.dispose();
 
-                if (!mounted) {
-                  return;
-                }
+                if (!mounted) return;
 
                 Navigator.pop(context);
 
@@ -411,15 +423,6 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
-  }
-
-  bool _isMine(String message, int index) {
-    if (_myMessages.contains(message)) {
-      return true;
-    }
-
-    // Les messages de démonstration existants sont reçus.
-    return false;
   }
 
   @override
@@ -565,10 +568,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           _messages[index - 1];
 
                       return _MessageBubble(
-                        text: message,
-                        isMine: _isMine(
-                          message,
-                          index - 1,
+                        message: message,
+                        time: _formatTime(
+                          message.sentAt,
                         ),
                         profile: widget.profile,
                       );
@@ -586,8 +588,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Padding(
         padding: const EdgeInsets.all(30),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 120,
@@ -663,8 +664,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         const SizedBox(height: 5),
         Row(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
               Icons.location_on_outlined,
@@ -808,19 +808,19 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class _MessageBubble extends StatelessWidget {
-  final String text;
-  final bool isMine;
+  final ChatMessage message;
+  final String time;
   final DatingProfile profile;
 
   const _MessageBubble({
-    required this.text,
-    required this.isMine,
+    required this.message,
+    required this.time,
     required this.profile,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (isMine) {
+    if (message.isMine) {
       return Align(
         alignment: Alignment.centerRight,
         child: Container(
@@ -854,13 +854,39 @@ class _MessageBubble extends StatelessWidget {
               bottomRight: Radius.circular(6),
             ),
           ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              height: 1.35,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                message.text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    time,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    message.isRead
+                        ? Icons.done_all
+                        : Icons.done,
+                    size: 14,
+                    color: Colors.white70,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       );
@@ -869,8 +895,7 @@ class _MessageBubble extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Container(
             width: 34,
@@ -896,8 +921,7 @@ class _MessageBubble extends StatelessWidget {
             child: Container(
               constraints: BoxConstraints(
                 maxWidth:
-                    MediaQuery.of(context).size.width *
-                        0.72,
+                    MediaQuery.of(context).size.width * 0.72,
               ),
               margin: const EdgeInsets.only(
                 bottom: 12,
@@ -906,7 +930,7 @@ class _MessageBubble extends StatelessWidget {
                 15,
                 11,
                 12,
-                11,
+                9,
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -924,13 +948,26 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Text(
-                text,
-                style: const TextStyle(
-                  color: Color(0xFF444444),
-                  fontSize: 15,
-                  height: 1.35,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.text,
+                    style: const TextStyle(
+                      color: Color(0xFF444444),
+                      fontSize: 15,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    time,
+                    style: const TextStyle(
+                      color: Color(0xFFAAAAAA),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
