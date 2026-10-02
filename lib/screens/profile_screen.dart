@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/user_profile.dart';
 import '../services/user_service.dart';
+import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -71,17 +72,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  void _showComingSoon(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF333333),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+  Future<void> _openEditProfile() async {
+    final updatedProfile = await Navigator.push<UserProfile>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileScreen(
+          profile: _profile,
         ),
       ),
     );
+
+    if (!mounted || updatedProfile == null) {
+      return;
+    }
+
+    setState(() {
+      _profile = updatedProfile;
+    });
   }
 
   Widget _buildPhoto(String path) {
@@ -183,7 +190,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-
               if (isPrimary)
                 Positioned(
                   top: 12,
@@ -220,7 +226,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-
               Positioned(
                 bottom: 12,
                 right: 12,
@@ -264,7 +269,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   '${_profile.name}, ${_profile.age}',
@@ -497,12 +503,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return SizedBox(
       height: 55,
       child: ElevatedButton.icon(
-        onPressed: () {
-          _showComingSoon(
-            'La modification du profil sera disponible prochainement.',
-          );
-        },
-        icon: const Icon(Icons.edit_outlined),
+        onPressed: _openEditProfile,
+        icon: const Icon(
+          Icons.edit_outlined,
+        ),
         label: const Text(
           'Modifier mon profil',
           style: TextStyle(
