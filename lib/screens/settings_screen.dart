@@ -1,47 +1,195 @@
 import 'package:flutter/material.dart';
 
-class SettingsScreen extends StatelessWidget {
+import '../services/auth_service.dart';
+import '../services/preferences_service.dart';
+import '../services/user_service.dart';
+import 'welcome_screen.dart';
+
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
-  void _showMessage(
-    BuildContext context,
-    String message,
-  ) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-      ),
+  @override
+  State<SettingsScreen> createState() =>
+      _SettingsScreenState();
+}
+
+class _SettingsScreenState
+    extends State<SettingsScreen> {
+  bool _notificationsEnabled = true;
+  bool _showOnlineStatus = true;
+  bool _showReadReceipts = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _notificationsEnabled =
+        PreferencesService.notificationsEnabled;
+    _showOnlineStatus =
+        PreferencesService.showOnlineStatus;
+    _showReadReceipts =
+        PreferencesService.showReadReceipts;
+  }
+
+  Future<void> _toggleNotifications(
+    bool value,
+  ) async {
+    setState(() {
+      _notificationsEnabled = value;
+    });
+
+    await PreferencesService.setNotificationsEnabled(
+      value,
     );
   }
 
-  void _showConfirmation(
-    BuildContext context,
-    String title,
-    String message,
-  ) {
+  Future<void> _toggleOnlineStatus(
+    bool value,
+  ) async {
+    setState(() {
+      _showOnlineStatus = value;
+    });
+
+    await PreferencesService.setShowOnlineStatus(
+      value,
+    );
+  }
+
+  Future<void> _toggleReadReceipts(
+    bool value,
+  ) async {
+    setState(() {
+      _showReadReceipts = value;
+    });
+
+    await PreferencesService.setShowReadReceipts(
+      value,
+    );
+  }
+
+  Future<void> _logout() async {
+    final confirmed =
+        await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Se déconnecter ?',
+          ),
+          content: const Text(
+            'Tu pourras te reconnecter à ton compte plus tard.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text(
+                'Se déconnecter',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    await AuthService.signOut();
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const WelcomeScreen(),
+      ),
+      (route) => false,
+    );
+  }
+
+  Future<void> _deleteLocalData() async {
+    final confirmed =
+        await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Supprimer les données ?',
+          ),
+          content: const Text(
+            'Cette action supprimera les données actuellement enregistrées sur cet appareil.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text(
+                'Supprimer',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    await UserService.deleteProfile();
+    await PreferencesService.clear();
+    await AuthService.signOut();
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Les données locales ont été supprimées.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const WelcomeScreen(),
+      ),
+      (route) => false,
+    );
+  }
+
+  void _showInfo(String title, String message) {
     showDialog<void>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(
-              height: 1.4,
-            ),
-          ),
+          title: Text(title),
+          content: Text(message),
           actions: [
             TextButton(
               onPressed: () {
@@ -55,206 +203,261 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: 4,
+        bottom: 10,
+        top: 22,
+      ),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard({
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return const Divider(
+      height: 1,
+      indent: 60,
+      endIndent: 16,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFFE6005C);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8FB),
+      backgroundColor: const Color(0xFFFFF7FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF8FB),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
+        foregroundColor: Colors.black87,
         title: const Text(
           'Paramètres',
           style: TextStyle(
-            fontWeight: FontWeight.w800,
-            color: Colors.black,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           20,
-          15,
+          4,
           20,
-          30,
+          32,
         ),
         children: [
-          // En-tête
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFFE1EC),
-                  Color(0xFFFFF3F7),
-                ],
+          _buildSectionTitle(
+            'Notifications',
+          ),
+
+          _buildCard(
+            children: [
+              SwitchListTile(
+                value: _notificationsEnabled,
+                activeColor: primaryColor,
+                secondary: const Icon(
+                  Icons.notifications_none_outlined,
+                ),
+                title: const Text(
+                  'Notifications',
+                ),
+                subtitle: const Text(
+                  'Recevoir les nouveaux messages et matchs',
+                ),
+                onChanged:
+                    _toggleNotifications,
               ),
-              borderRadius: BorderRadius.circular(26),
-            ),
-            child: const Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Color(0xFFE91E63),
-                  child: Icon(
-                    Icons.favorite,
-                    color: Colors.white,
-                    size: 30,
+            ],
+          ),
+
+          _buildSectionTitle(
+            'Confidentialité',
+          ),
+
+          _buildCard(
+            children: [
+              SwitchListTile(
+                value: _showOnlineStatus,
+                activeColor: primaryColor,
+                secondary: const Icon(
+                  Icons.circle_outlined,
+                ),
+                title: const Text(
+                  'Statut en ligne',
+                ),
+                subtitle: const Text(
+                  'Permettre aux autres de voir si tu es en ligne',
+                ),
+                onChanged:
+                    _toggleOnlineStatus,
+              ),
+              _buildDivider(),
+              SwitchListTile(
+                value: _showReadReceipts,
+                activeColor: primaryColor,
+                secondary: const Icon(
+                  Icons.done_all_outlined,
+                ),
+                title: const Text(
+                  'Confirmations de lecture',
+                ),
+                subtitle: const Text(
+                  'Indiquer quand un message a été lu',
+                ),
+                onChanged:
+                    _toggleReadReceipts,
+              ),
+            ],
+          ),
+
+          _buildSectionTitle(
+            'Aide et informations',
+          ),
+
+          _buildCard(
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.help_outline,
+                ),
+                title: const Text(
+                  'Centre d’aide',
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                ),
+                onTap: () {
+                  _showInfo(
+                    'Centre d’aide',
+                    'Le centre d’aide de Ose sera disponible prochainement.',
+                  );
+                },
+              ),
+              _buildDivider(),
+              ListTile(
+                leading: const Icon(
+                  Icons.description_outlined,
+                ),
+                title: const Text(
+                  'Conditions d’utilisation',
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                ),
+                onTap: () {
+                  _showInfo(
+                    'Conditions d’utilisation',
+                    'Les conditions d’utilisation complètes seront ajoutées avant la mise en ligne de Ose.',
+                  );
+                },
+              ),
+              _buildDivider(),
+              ListTile(
+                leading: const Icon(
+                  Icons.privacy_tip_outlined,
+                ),
+                title: const Text(
+                  'Politique de confidentialité',
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                ),
+                onTap: () {
+                  _showInfo(
+                    'Confidentialité',
+                    'La politique de confidentialité complète sera ajoutée avant la mise en ligne de Ose.',
+                  );
+                },
+              ),
+              _buildDivider(),
+              ListTile(
+                leading: const Icon(
+                  Icons.info_outline,
+                ),
+                title: const Text(
+                  'À propos de Ose',
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                ),
+                onTap: () {
+                  _showInfo(
+                    'Ose',
+                    'Ose — Ose faire le premier pas. 💕\n\nVersion 1.0.0',
+                  );
+                },
+              ),
+            ],
+          ),
+
+          _buildSectionTitle(
+            'Compte',
+          ),
+
+          _buildCard(
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.logout,
+                  color: primaryColor,
+                ),
+                title: const Text(
+                  'Se déconnecter',
+                ),
+                onTap: _logout,
+              ),
+              _buildDivider(),
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                ),
+                title: const Text(
+                  'Supprimer mes données',
+                  style: TextStyle(
+                    color: Colors.red,
                   ),
                 ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Ton espace Ose',
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF9F2458),
-                        ),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        'Personnalise ton expérience.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF777777),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                onTap: _deleteLocalData,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          const Center(
+            child: Text(
+              'Ose faire le premier pas. 💕',
+              style: TextStyle(
+                color: Colors.black45,
+                fontSize: 13,
+              ),
             ),
           ),
-
-          const SizedBox(height: 25),
-
-          const _SectionTitle(
-            title: 'Mon compte',
-          ),
-
-          _SettingsTile(
-            icon: Icons.person_outline,
-            title: 'Modifier mon profil',
-            subtitle: 'Nom, bio, ville et centres d’intérêt',
-            onTap: () {
-              _showMessage(
-                context,
-                'La modification du profil sera bientôt disponible.',
-              );
-            },
-          ),
-
-          _SettingsTile(
-            icon: Icons.photo_library_outlined,
-            title: 'Mes photos',
-            subtitle: 'Gérer les photos de ton profil',
-            onTap: () {
-              _showMessage(
-                context,
-                'La gestion des photos sera bientôt disponible.',
-              );
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          const _SectionTitle(
-            title: 'Confidentialité et sécurité',
-          ),
-
-          _SettingsTile(
-            icon: Icons.lock_outline,
-            title: 'Confidentialité',
-            subtitle: 'Contrôle tes informations personnelles',
-            onTap: () {
-              _showConfirmation(
-                context,
-                'Confidentialité',
-                'Tes informations personnelles seront protégées '
-                'et contrôlées par les paramètres de confidentialité '
-                'de ton compte.',
-              );
-            },
-          ),
-
-          _SettingsTile(
-            icon: Icons.shield_outlined,
-            title: 'Sécurité',
-            subtitle: 'Conseils pour utiliser Ose en sécurité',
-            onTap: () {
-              _showConfirmation(
-                context,
-                'Sécurité sur Ose',
-                'Ne partage jamais tes informations sensibles '
-                'avec une personne que tu viens de rencontrer. '
-                'Privilégie les lieux publics pour une première rencontre.',
-              );
-            },
-          ),
-
-          _SettingsTile(
-            icon: Icons.block_outlined,
-            title: 'Profils bloqués',
-            subtitle: 'Gérer les personnes bloquées',
-            onTap: () {
-              _showMessage(
-                context,
-                'La gestion des profils bloqués sera bientôt disponible.',
-              );
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          const _SectionTitle(
-            title: 'Aide',
-          ),
-
-          _SettingsTile(
-            icon: Icons.help_outline,
-            title: 'Aide et assistance',
-            subtitle: 'Besoin d’aide avec Ose ?',
-            onTap: () {
-              _showConfirmation(
-                context,
-                'Aide et assistance',
-                'Le centre d’aide de Ose sera bientôt disponible.',
-              );
-            },
-          ),
-
-          _SettingsTile(
-            icon: Icons.feedback_outlined,
-            title: 'Donner mon avis',
-            subtitle: 'Partager une suggestion',
-            onTap: () {
-              _showMessage(
-                context,
-                'La fonctionnalité sera bientôt disponible.',
-              );
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          const _SectionTitle(
-            title: 'À propos',
-          ),
-
-          _SettingsTile(
-            icon: Icons.favorite_border,
-            title: 'À propos de Ose',
-            subtitle: 'Ose faire le premier pas. 💕',
-            onTap: () {
-              _showConfirmation(
-                context,
-                'Ose',
-                'Ose est une application de rencontres pensée '
-               
+        ],
+      ),
+    );
+  }
+}
