@@ -28,7 +28,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-
     _profile = widget.profile;
     _loadProfile();
   }
@@ -46,9 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _refreshProfile() async {
-    if (_isLoading) {
-      return;
-    }
+    if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
@@ -56,9 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     await _loadProfile();
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
@@ -188,6 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+
               if (isPrimary)
                 Positioned(
                   top: 12,
@@ -201,8 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.white.withValues(
                         alpha: 0.92,
                       ),
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -210,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Icon(
                           Icons.star,
                           size: 15,
-                          color: Color(0xFFE6005C),
+                          color: primaryColor,
                         ),
                         SizedBox(width: 5),
                         Text(
@@ -218,13 +213,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFFE6005C),
+                            color: primaryColor,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
+
               Positioned(
                 bottom: 12,
                 right: 12,
@@ -237,8 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.black.withValues(
                       alpha: 0.55,
                     ),
-                    borderRadius:
-                        BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     '${index + 1}/${_profile.photos.length}',
@@ -258,19 +253,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader() {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(
-        20,
+        4,
         8,
-        20,
+        4,
         22,
       ),
       child: Row(
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '${_profile.name}, ${_profile.age}',
@@ -288,11 +282,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: primaryColor,
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      _profile.city,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF777777),
+                    Expanded(
+                      child: Text(
+                        _profile.city,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF777777),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -401,7 +398,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(width: 13),
           Expanded(
             child: Text(
-              _profile.lookingFor,
+              _profile.lookingFor.isEmpty
+                  ? 'Pas encore renseigné'
+                  : _profile.lookingFor,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -503,9 +502,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'La modification du profil sera disponible prochainement.',
           );
         },
-        icon: const Icon(
-          Icons.edit_outlined,
-        ),
+        icon: const Icon(Icons.edit_outlined),
         label: const Text(
           'Modifier mon profil',
           style: TextStyle(
@@ -552,8 +549,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: primaryColor,
         onRefresh: _refreshProfile,
         child: ListView(
-          physics:
-              const AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
             20,
             8,
@@ -581,8 +577,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(17),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius:
-                      BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   _profile.bio,
@@ -608,8 +603,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(17),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius:
-                      BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
                   'Aucun centre d’intérêt ajouté.',
@@ -660,11 +654,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 side: const BorderSide(
                   color: primaryColor,
                 ),
-                minimumSize:
-                    const Size.fromHeight(52),
+                minimumSize: const Size.fromHeight(52),
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(18),
                 ),
               ),
             ),
