@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../services/user_service.dart';
 import 'edit_profile_screen.dart';
+import 'manage_photos_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -91,6 +92,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _openManagePhotos() async {
+    final updatedProfile = await Navigator.push<UserProfile>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ManagePhotosScreen(
+          profile: _profile,
+        ),
+      ),
+    );
+
+    if (!mounted || updatedProfile == null) {
+      await _loadProfile();
+      return;
+    }
+
+    setState(() {
+      _profile = updatedProfile;
+    });
+  }
+
   Widget _buildPhoto(String path) {
     final isNetworkImage =
         path.startsWith('http://') ||
@@ -130,130 +151,175 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildPhotoGallery() {
     if (_profile.photos.isEmpty) {
-      return Container(
-        height: 250,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
-            ),
-          ],
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.add_a_photo_outlined,
-                size: 58,
-                color: Color(0xFFE7A5BD),
-              ),
-              SizedBox(height: 12),
-              Text(
-                'Ajoute tes premières photos',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF777777),
-                ),
+      return GestureDetector(
+        onTap: _openManagePhotos,
+        child: Container(
+          height: 250,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 7),
               ),
             ],
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.add_a_photo_outlined,
+                  size: 58,
+                  color: Color(0xFFE7A5BD),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Ajoute tes premières photos',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF777777),
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  'Appuie ici pour commencer',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFFAAAAAA),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    return SizedBox(
-      height: 250,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _profile.photos.length,
-        separatorBuilder: (_, __) {
-          return const SizedBox(width: 12);
-        },
-        itemBuilder: (context, index) {
-          final isPrimary = index == 0;
+    return Column(
+      children: [
+        SizedBox(
+          height: 250,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _profile.photos.length,
+            separatorBuilder: (_, __) {
+              return const SizedBox(width: 12);
+            },
+            itemBuilder: (context, index) {
+              final isPrimary = index == 0;
 
-          return Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(26),
-                child: SizedBox(
-                  width: 190,
-                  height: 250,
-                  child: _buildPhoto(
-                    _profile.photos[index],
-                  ),
-                ),
-              ),
-              if (isPrimary)
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(
-                        alpha: 0.92,
+              return Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(26),
+                    child: SizedBox(
+                      width: 190,
+                      height: 250,
+                      child: _buildPhoto(
+                        _profile.photos[index],
                       ),
-                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star,
-                          size: 15,
-                          color: primaryColor,
+                  ),
+
+                  if (isPrimary)
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 7,
                         ),
-                        SizedBox(width: 5),
-                        Text(
-                          'Principale',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: primaryColor,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(
+                            alpha: 0.92,
                           ),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ],
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.star,
+                              size: 15,
+                              color: primaryColor,
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'Principale',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(
+                          alpha: 0.55,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${index + 1}/${_profile.photos.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(
-                      alpha: 0.55,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '${index + 1}/${_profile.photos.length}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+                ],
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: _openManagePhotos,
+            icon: const Icon(
+              Icons.photo_library_outlined,
+            ),
+            label: const Text(
+              'Gérer mes photos',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
               ),
-            ],
-          );
-        },
-      ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: const BorderSide(
+                color: primaryColor,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
