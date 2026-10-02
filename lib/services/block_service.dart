@@ -26,14 +26,17 @@ class BlockService {
 
   /// Retourne les identifiants des profils bloqués.
   static List<String> get blockedProfileIds {
-    return List.unmodifiable(
-      _blockedProfileIds,
-    );
+    return List.unmodifiable(_blockedProfileIds);
   }
 
   /// Nombre de profils bloqués.
   static int get blockedCount {
     return _blockedProfileIds.length;
+  }
+
+  /// Vérifie s'il existe au moins un profil bloqué.
+  static bool get hasBlockedProfiles {
+    return _blockedProfileIds.isNotEmpty;
   }
 
   /// Supprime tous les blocages locaux.
