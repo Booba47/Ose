@@ -1,7 +1,7 @@
 class ReportService {
   static final List<Map<String, String>> _reports = [];
 
-  /// Signale un profil.
+  /// Signale un profil avec une raison.
   static Future<void> reportProfile({
     required String profileId,
     required String reason,
@@ -19,7 +19,7 @@ class ReportService {
     });
   }
 
-  /// Retourne les signalements enregistrés.
+  /// Retourne tous les signalements.
   static List<Map<String, String>> get reports {
     return List.unmodifiable(_reports);
   }
