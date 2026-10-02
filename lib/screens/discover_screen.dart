@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../models/dating_profile.dart';
-import '../services/dating_profile_service.dart';
+import '../services/block_service.dart';
 import '../services/like_service.dart';
 import '../services/match_service.dart';
+import '../services/search_service.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -14,17 +15,41 @@ class DiscoverScreen extends StatefulWidget {
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
   late List<DatingProfile> _profiles;
+
   int _currentIndex = 0;
+
+  String _searchQuery = '';
+  bool _verifiedOnly = false;
 
   @override
   void initState() {
     super.initState();
 
-    _profiles = DatingProfileService.getProfiles();
+    _loadProfiles();
 
-    // Quelques matchs de démonstration pour rendre l'application
-    // immédiatement vivante.
+    // Quelques matchs de démonstration pour rendre
+    // l'application immédiatement vivante.
     MatchService.initializeDemoMatches();
+  }
+
+  void _loadProfiles() {
+    final profiles = _verifiedOnly
+        ? SearchService.searchVerified(
+            query: _searchQuery,
+          )
+        : SearchService.search(
+            query: _searchQuery,
+          );
+
+    setState(() {
+      _profiles = profiles
+          .where(
+            (profile) => !BlockService.isBlocked(profile),
+          )
+          .toList();
+
+      _currentIndex = 0;
+    });
   }
 
   DatingProfile? get _currentProfile {
@@ -70,8 +95,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
     LikeService.likeProfile(profile);
 
-    // Les profils de démonstration déjà présents dans les matchs
-    // permettent de montrer l'écran de Match.
     if (MatchService.isMatched(profile)) {
       _showMatchDialog(profile);
       return;
@@ -120,9 +143,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 22),
-
                 const Text(
                   'C’est un Match ! 💕',
                   textAlign: TextAlign.center,
@@ -132,9 +153,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     color: Color(0xFFC52A70),
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 Text(
                   'Toi et ${profile.name} vous vous plaisez.',
                   textAlign: TextAlign.center,
@@ -144,9 +163,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     height: 1.4,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 const Text(
                   'C’est peut-être le moment de faire le premier pas. 😊',
                   textAlign: TextAlign.center,
@@ -156,9 +173,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     height: 1.4,
                   ),
                 ),
-
                 const SizedBox(height: 25),
-
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -198,6 +213,153 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     });
   }
 
+  void _openSearch() {
+    final controller = TextEditingController(
+      text: _searchQuery,
+    );
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        bool verifiedOnly = _verifiedOnly;
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                22,
+                18,
+                22,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 45,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Rechercher',
+                    style: TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Trouve une personne par son nom, sa ville ou ses intérêts.',
+                    style: TextStyle(
+                      color: Color(0xFF777777),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Nom, ville ou intérêt',
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: Color(0xFFC52A70),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFFFF4F8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Profils vérifiés uniquement',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Afficher uniquement les profils vérifiés',
+                    ),
+                    value: verifiedOnly,
+                    activeColor: const Color(0xFFED1767),
+                    onChanged: (value) {
+                      setModalState(() {
+                        verifiedOnly = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+
+                        setState(() {
+                          _searchQuery = controller.text.trim();
+                          _verifiedOnly = verifiedOnly;
+                        });
+
+                        _loadProfiles();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFFED1767),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(18),
+                        ),
+                      ),
+                      child: const Text(
+                        'Rechercher',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _searchQuery = '';
+      _verifiedOnly = false;
+    });
+
+    _loadProfiles();
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = _currentProfile;
@@ -212,7 +374,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         child: Column(
           children: [
             _buildHeader(),
-
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
@@ -223,6 +384,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
                 child: Column(
                   children: [
+                    if (_searchQuery.isNotEmpty ||
+                        _verifiedOnly)
+                      _buildActiveFilter(),
+
                     _buildProfileCard(profile),
 
                     const SizedBox(height: 18),
@@ -234,6 +399,50 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActiveFilter() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFE5EF),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.filter_alt_outlined,
+            size: 18,
+            color: Color(0xFFC52A70),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _searchQuery.isNotEmpty
+                  ? 'Recherche : $_searchQuery'
+                  : 'Profils vérifiés uniquement',
+              style: const TextStyle(
+                color: Color(0xFFC52A70),
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: _clearFilters,
+            child: const Icon(
+              Icons.close,
+              size: 20,
+              color: Color(0xFFC52A70),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -272,17 +481,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ],
             ),
           ),
-
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFE5EF),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: const Icon(
-              Icons.tune,
-              color: Color(0xFFC52A70),
+          GestureDetector(
+            onTap: _openSearch,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE5EF),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Icon(
+                Icons.tune,
+                color: Color(0xFFC52A70),
+              ),
             ),
           ),
         ],
@@ -311,7 +522,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               CrossAxisAlignment.start,
           children: [
             _buildProfileHeader(profile),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 20,
@@ -334,10 +544,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           ),
                         ),
                       ),
-
                       if (profile.verified)
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding:
+                              const EdgeInsets.symmetric(
                             horizontal: 9,
                             vertical: 6,
                           ),
@@ -359,7 +569,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                 'Vérifié',
                                 style: TextStyle(
                                   color: Color(0xFF3298DB),
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight:
+                                      FontWeight.w700,
                                   fontSize: 11,
                                 ),
                               ),
@@ -368,9 +579,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         ),
                     ],
                   ),
-
                   const SizedBox(height: 8),
-
                   Row(
                     children: [
                       const Icon(
@@ -388,9 +597,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
                   Text(
                     profile.bio,
                     style: const TextStyle(
@@ -399,9 +606,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       color: Color(0xFF555555),
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   const Text(
                     'Ses centres d’intérêt',
                     style: TextStyle(
@@ -410,9 +615,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       color: Color(0xFF9F2458),
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -478,7 +681,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ),
             ),
           ),
-
           Positioned(
             bottom: -55,
             left: -35,
@@ -492,7 +694,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ),
             ),
           ),
-
           Center(
             child: Container(
               width: 175,
@@ -518,7 +719,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ),
             ),
           ),
-
           Positioned(
             left: 16,
             top: 16,
@@ -568,9 +768,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           backgroundColor: Colors.white,
           onPressed: _passProfile,
         ),
-
         const SizedBox(width: 18),
-
         _ActionButton(
           icon: Icons.favorite,
           label: "J'aime",
@@ -584,6 +782,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   Widget _buildEndScreen() {
+    final hasFilter =
+        _searchQuery.isNotEmpty || _verifiedOnly;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8FB),
       body: SafeArea(
@@ -610,44 +811,44 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 25),
-
-                const Text(
-                  'Tu as fait le tour !',
+                Text(
+                  hasFilter
+                      ? 'Aucun profil trouvé'
+                      : 'Tu as fait le tour !',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
-                const Text(
-                  'De nouvelles rencontres arriveront bientôt. '
-                  'En attendant, pourquoi ne pas regarder tes matchs ?',
+                Text(
+                  hasFilter
+                      ? 'Essaie de modifier ta recherche ou tes filtres.'
+                      : 'De nouvelles rencontres arriveront bientôt. '
+                          'En attendant, pourquoi ne pas regarder tes matchs ?',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     height: 1.45,
                     color: Color(0xFF777777),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
                 SizedBox(
                   width: double.infinity,
                   height: 58,
                   child: ElevatedButton.icon(
-                    onPressed: _restartDiscovery,
-                    icon: const Icon(
-                      Icons.refresh,
-                    ),
-                    label: const Text(
-                      'Recommencer',
-                      style: TextStyle(
+                    onPressed: hasFilter
+                        ? _clearFilters
+                        : _restartDiscovery,
+                    icon: const Icon(Icons.refresh),
+                    label: Text(
+                      hasFilter
+                          ? 'Effacer les filtres'
+                          : 'Recommencer',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                       ),
@@ -663,9 +864,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 18),
-
                 const Text(
                   'Ose faire le premier pas. 💕',
                   style: TextStyle(
@@ -738,9 +937,7 @@ class _ActionButton extends StatelessWidget {
             ),
           ),
         ),
-
         const SizedBox(height: 7),
-
         Text(
           label,
           style: const TextStyle(
