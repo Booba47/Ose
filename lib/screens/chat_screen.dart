@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/dating_profile.dart';
+import '../services/block_service.dart';
+import '../services/message_service.dart';
+import '../services/report_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final DatingProfile profile;
@@ -21,18 +24,26 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController =
       ScrollController();
 
-  final List<_ChatMessage> _messages = [
-    _ChatMessage(
-      text: 'Salut 😊',
-      isMine: false,
-      time: '19:42',
-    ),
-    _ChatMessage(
-      text: 'Content(e) de faire ta connaissance !',
-      isMine: false,
-      time: '19:43',
-    ),
-  ];
+  late List<String> _messages;
+
+  // Les messages envoyés pendant cette session
+  // sont identifiés comme étant les nôtres.
+  final Set<String> _myMessages = {};
+
+  bool _isBlocked = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _isBlocked = BlockService.isBlocked(widget.profile);
+
+    _loadMessages();
+  }
+
+  void _loadMessages() {
+    _messages = MessageService.getMessages(widget.profile);
+  }
 
   @override
   void dispose() {
@@ -41,23 +52,25 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
 
-    if (text.isEmpty) {
+    if (text.isEmpty || _isBlocked) {
       return;
     }
 
-    final now = TimeOfDay.now();
+    await MessageService.sendMessage(
+      profile: widget.profile,
+      message: text,
+    );
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
-      _messages.add(
-        _ChatMessage(
-          text: text,
-          isMine: true,
-          time: now.format(context),
-        ),
-      );
+      _myMessages.add(text);
+      _loadMessages();
     });
 
     _messageController.clear();
@@ -138,14 +151,20 @@ class _ChatScreenState extends State<ChatScreen> {
                 },
               ),
               _OptionTile(
+                icon: Icons.delete_outline,
+                title: 'Supprimer la conversation',
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDeleteConversation();
+                },
+              ),
+              _OptionTile(
                 icon: Icons.block_outlined,
                 title: 'Bloquer cette personne',
                 color: const Color(0xFFC62861),
                 onTap: () {
                   Navigator.pop(context);
-                  _showMessage(
-                    'Le blocage sera disponible avec le compte réel.',
-                  );
+                  _confirmBlock();
                 },
               ),
               _OptionTile(
@@ -154,13 +173,229 @@ class _ChatScreenState extends State<ChatScreen> {
                 color: const Color(0xFFC62861),
                 onTap: () {
                   Navigator.pop(context);
-                  _showMessage(
-                    'Le signalement sera bientôt disponible.',
-                  );
+                  _showReportDialog();
                 },
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteConversation() {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Supprimer la conversation ?',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Text(
+            'Les messages avec ${widget.profile.name} seront supprimés de cet appareil.',
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+
+                await MessageService.deleteConversation(
+                  widget.profile,
+                );
+
+                if (!mounted) {
+                  return;
+                }
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Conversation supprimée.',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFED1767),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmBlock() {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Bloquer cette personne ?',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Text(
+            '${widget.profile.name} ne pourra plus apparaître dans tes Matchs, Messages ou Découvrir.',
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+
+                await BlockService.blockProfile(
+                  widget.profile,
+                );
+
+                await MessageService.deleteConversation(
+                  widget.profile,
+                );
+
+                if (!mounted) {
+                  return;
+                }
+
+                setState(() {
+                  _isBlocked = true;
+                });
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '${widget.profile.name} a été bloqué(e).',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD32F2F),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Bloquer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showReportDialog() {
+    final TextEditingController reasonController =
+        TextEditingController();
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Signaler ce profil',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Indique pourquoi tu souhaites signaler cette personne.',
+                style: TextStyle(
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: reasonController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: 'Motif du signalement',
+                  filled: true,
+                  fillColor: const Color(0xFFF7F7F7),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                reasonController.dispose();
+                Navigator.pop(context);
+              },
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final reason =
+                    reasonController.text.trim();
+
+                if (reason.isEmpty) {
+                  return;
+                }
+
+                await ReportService.reportProfile(
+                  profileId: widget.profile.id,
+                  reason: reason,
+                );
+
+                reasonController.dispose();
+
+                if (!mounted) {
+                  return;
+                }
+
+                Navigator.pop(context);
+
+                _showMessage(
+                  'Merci. Ton signalement a été enregistré.',
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC62861),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Signaler'),
+            ),
+          ],
         );
       },
     );
@@ -176,6 +411,15 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  bool _isMine(String message, int index) {
+    if (_myMessages.contains(message)) {
+      return true;
+    }
+
+    // Les messages de démonstration existants sont reçus.
+    return false;
   }
 
   @override
@@ -222,22 +466,23 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ),
-                Positioned(
-                  right: 0,
-                  bottom: 1,
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF45B96B),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 2,
+                if (!_isBlocked)
+                  Positioned(
+                    right: 0,
+                    bottom: 1,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF45B96B),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
             const SizedBox(width: 10),
@@ -270,11 +515,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  const Text(
-                    'En ligne',
+                  Text(
+                    _isBlocked ? 'Bloqué(e)' : 'En ligne',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF45B96B),
+                      color: _isBlocked
+                          ? const Color(0xFFD32F2F)
+                          : const Color(0xFF45B96B),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -295,34 +542,88 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(width: 5),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(
-                16,
-                20,
-                16,
-                15,
-              ),
-              itemCount: _messages.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _buildConversationIntro();
-                }
+      body: _isBlocked
+          ? _buildBlockedState()
+          : Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      20,
+                      16,
+                      15,
+                    ),
+                    itemCount: _messages.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return _buildConversationIntro();
+                      }
 
-                final message = _messages[index - 1];
+                      final message =
+                          _messages[index - 1];
 
-                return _MessageBubble(
-                  message: message,
-                  profile: widget.profile,
-                );
-              },
+                      return _MessageBubble(
+                        text: message,
+                        isMine: _isMine(
+                          message,
+                          index - 1,
+                        ),
+                        profile: widget.profile,
+                      );
+                    },
+                  ),
+                ),
+                _buildMessageInput(),
+              ],
             ),
-          ),
-          _buildMessageInput(),
-        ],
+    );
+  }
+
+  Widget _buildBlockedState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFE5EF),
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.block,
+                  size: 55,
+                  color: Color(0xFFD32F2F),
+                ),
+              ),
+            ),
+            const SizedBox(height: 25),
+            const Text(
+              'Personne bloquée',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '${widget.profile.name} a été bloqué(e).',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF777777),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -362,7 +663,8 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         const SizedBox(height: 5),
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             const Icon(
               Icons.location_on_outlined,
@@ -449,6 +751,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: TextField(
                 controller: _messageController,
+                enabled: !_isBlocked,
                 textInputAction: TextInputAction.send,
                 minLines: 1,
                 maxLines: 4,
@@ -476,10 +779,12 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(width: 8),
             Material(
-              color: const Color(0xFFED1767),
+              color: _isBlocked
+                  ? const Color(0xFFCCCCCC)
+                  : const Color(0xFFED1767),
               borderRadius: BorderRadius.circular(18),
               child: InkWell(
-                onTap: _sendMessage,
+                onTap: _isBlocked ? null : _sendMessage,
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
                   width: 49,
@@ -503,17 +808,19 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class _MessageBubble extends StatelessWidget {
-  final _ChatMessage message;
+  final String text;
+  final bool isMine;
   final DatingProfile profile;
 
   const _MessageBubble({
-    required this.message,
+    required this.text,
+    required this.isMine,
     required this.profile,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (message.isMine) {
+    if (isMine) {
       return Align(
         alignment: Alignment.centerRight,
         child: Container(
@@ -547,26 +854,13 @@ class _MessageBubble extends StatelessWidget {
               bottomRight: Radius.circular(6),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                message.text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  height: 1.35,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                message.time,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.72),
-                  fontSize: 10,
-                ),
-              ),
-            ],
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              height: 1.35,
+            ),
           ),
         ),
       );
@@ -575,7 +869,8 @@ class _MessageBubble extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment:
+            CrossAxisAlignment.end,
         children: [
           Container(
             width: 34,
@@ -601,7 +896,8 @@ class _MessageBubble extends StatelessWidget {
             child: Container(
               constraints: BoxConstraints(
                 maxWidth:
-                    MediaQuery.of(context).size.width * 0.72,
+                    MediaQuery.of(context).size.width *
+                        0.72,
               ),
               margin: const EdgeInsets.only(
                 bottom: 12,
@@ -610,7 +906,7 @@ class _MessageBubble extends StatelessWidget {
                 15,
                 11,
                 12,
-                8,
+                11,
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -628,27 +924,13 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.text,
-                    style: const TextStyle(
-                      color: Color(0xFF444444),
-                      fontSize: 15,
-                      height: 1.35,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    message.time,
-                    style: const TextStyle(
-                      color: Color(0xFFAAAAAA),
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Color(0xFF444444),
+                  fontSize: 15,
+                  height: 1.35,
+                ),
               ),
             ),
           ),
@@ -656,18 +938,6 @@ class _MessageBubble extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ChatMessage {
-  final String text;
-  final bool isMine;
-  final String time;
-
-  const _ChatMessage({
-    required this.text,
-    required this.isMine,
-    required this.time,
-  });
 }
 
 class _OptionTile extends StatelessWidget {
