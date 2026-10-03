@@ -5,42 +5,69 @@ class LikeService {
   static final Set<String> _passedProfileIds = {};
 
   /// Ajoute un profil aux profils aimés.
-  static void likeProfile(DatingProfile profile) {
-    _likedProfileIds.add(profile.id);
-    _passedProfileIds.remove(profile.id);
+  static Future<void> likeProfile(
+    DatingProfile profile,
+  ) async {
+    final profileId = profile.id.trim();
+
+    if (profileId.isEmpty) {
+      return;
+    }
+
+    _likedProfileIds.add(profileId);
+
+    // Un profil aimé ne peut plus être dans les profils refusés.
+    _passedProfileIds.remove(profileId);
   }
 
-  /// Ajoute un profil aux profils refusés.
-  static void passProfile(DatingProfile profile) {
-    _passedProfileIds.add(profile.id);
-    _likedProfileIds.remove(profile.id);
+  /// Refuse un profil.
+  static Future<void> passProfile(
+    DatingProfile profile,
+  ) async {
+    final profileId = profile.id.trim();
+
+    if (profileId.isEmpty) {
+      return;
+    }
+
+    _passedProfileIds.add(profileId);
+
+    // Un profil refusé ne peut plus être dans les profils aimés.
+    _likedProfileIds.remove(profileId);
   }
 
-  /// Vérifie si un profil a été aimé.
-  static bool hasLiked(DatingProfile profile) {
+  /// Vérifie si le profil a été aimé.
+  static bool hasLiked(
+    DatingProfile profile,
+  ) {
     return _likedProfileIds.contains(profile.id);
   }
 
-  /// Vérifie si un profil a été refusé.
-  static bool hasPassed(DatingProfile profile) {
+  /// Vérifie si le profil a été refusé.
+  static bool hasPassed(
+    DatingProfile profile,
+  ) {
     return _passedProfileIds.contains(profile.id);
   }
 
-  /// Retourne tous les identifiants des profils aimés.
+  /// Vérifie si le profil n'a encore reçu aucune décision.
+  static bool hasNoDecision(
+    DatingProfile profile,
+  ) {
+    return !hasLiked(profile) && !hasPassed(profile);
+  }
+
+  /// Retourne les identifiants des profils aimés.
   static List<String> get likedProfileIds {
-    return List.unmodifiable(
-      _likedProfileIds,
-    );
+    return List.unmodifiable(_likedProfileIds);
   }
 
-  /// Retourne tous les identifiants des profils refusés.
+  /// Retourne les identifiants des profils refusés.
   static List<String> get passedProfileIds {
-    return List.unmodifiable(
-      _passedProfileIds,
-    );
+    return List.unmodifiable(_passedProfileIds);
   }
 
-  /// Nombre de profils aimés.
+  /// Nombre de likes.
   static int get likeCount {
     return _likedProfileIds.length;
   }
@@ -50,8 +77,35 @@ class LikeService {
     return _passedProfileIds.length;
   }
 
-  /// Supprime toutes les données de likes et de refus.
-  static void clear() {
+  /// Nombre total de profils ayant reçu une décision.
+  static int get decisionCount {
+    return _likedProfileIds.length +
+        _passedProfileIds.length;
+  }
+
+  /// Vérifie si un profil a reçu une décision.
+  static bool hasDecision(
+    DatingProfile profile,
+  ) {
+    return hasLiked(profile) || hasPassed(profile);
+  }
+
+  /// Retire le like d'un profil.
+  static Future<void> removeLike(
+    DatingProfile profile,
+  ) async {
+    _likedProfileIds.remove(profile.id);
+  }
+
+  /// Retire le refus d'un profil.
+  static Future<void> removePass(
+    DatingProfile profile,
+  ) async {
+    _passedProfileIds.remove(profile.id);
+  }
+
+  /// Réinitialise tous les likes et refus locaux.
+  static Future<void> clear() async {
     _likedProfileIds.clear();
     _passedProfileIds.clear();
   }
