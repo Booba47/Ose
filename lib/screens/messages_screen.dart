@@ -26,13 +26,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
     super.initState();
 
     MatchService.initializeDemoMatches();
-
     _loadConversations();
   }
 
   void _loadConversations() {
-    final profiles =
-        DatingProfileService.getProfiles();
+    final profiles = DatingProfileService.getProfiles();
 
     for (final profile in profiles) {
       UnreadMessageService.sync(profile);
@@ -54,17 +52,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
     });
   }
 
-  void _openChat(
-    DatingProfile profile,
-  ) {
+  void _openChat(DatingProfile profile) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) {
-          return ChatScreen(
-            profile: profile,
-          );
-        },
+        builder: (context) => ChatScreen(
+          profile: profile,
+        ),
       ),
     ).then((_) {
       if (!mounted) {
@@ -80,9 +74,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Future<void> _removeConversation(
     DatingProfile profile,
   ) async {
-    await MessageService.deleteConversation(
-      profile,
-    );
+    await MessageService.deleteConversation(profile);
 
     if (!mounted) {
       return;
@@ -108,17 +100,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Future<void> _blockProfile(
     DatingProfile profile,
   ) async {
-    await BlockService.blockProfile(
-      profile,
-    );
+    await BlockService.blockProfile(profile);
 
-    await MessageService.deleteConversation(
-      profile,
-    );
+    await MessageService.deleteConversation(profile);
 
-    await UnreadMessageService.markAsRead(
-      profile,
-    );
+    await UnreadMessageService.markAsRead(profile);
 
     if (!mounted) {
       return;
@@ -213,9 +199,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  _confirmDeleteConversation(
-                    profile,
-                  );
+                  _confirmDeleteConversation(profile);
                 },
               ),
 
@@ -327,7 +311,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
       },
     );
   }
-    String _getLastMessage(
+
+  String _getLastMessage(
     DatingProfile profile,
   ) {
     final lastMessage =
@@ -369,9 +354,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         ),
                         children: [
                           _buildTopCard(),
-
                           const SizedBox(height: 20),
-
                           Text(
                             'Tes conversations (${_conversations.length})',
                             style: const TextStyle(
@@ -379,7 +362,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               fontWeight: FontWeight.w900,
                             ),
                           ),
-
                           const SizedBox(height: 12),
 
                           ..._conversations.map(
@@ -519,7 +501,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
       ),
     );
   }
-    Widget _buildTopCard() {
+
+  Widget _buildTopCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -703,29 +686,51 @@ class _ConversationCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 70,
-                height: 70,
-                decoration:
-                    const BoxDecoration(
-                  gradient:
-                      LinearGradient(
-                    colors: [
-                      Color(0xFFFFD2E2),
-                      Color(0xFFFFEEF4),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    profile.emoji,
-                    style:
-                        const TextStyle(
-                      fontSize: 37,
+              Stack(
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration:
+                        const BoxDecoration(
+                      gradient:
+                          LinearGradient(
+                        colors: [
+                          Color(0xFFFFD2E2),
+                          Color(0xFFFFEEF4),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        profile.emoji,
+                        style:
+                            const TextStyle(
+                          fontSize: 37,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+
+                  Positioned(
+                    right: 1,
+                    bottom: 2,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color:
+                            const Color(0xFF45B96B),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(width: 14),
@@ -735,14 +740,35 @@ class _ConversationCard extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${profile.name}, ${profile.age}',
-                      style:
-                          const TextStyle(
-                        fontSize: 17,
-                        fontWeight:
-                            FontWeight.w900,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${profile.name}, ${profile.age}',
+                            overflow:
+                                TextOverflow.ellipsis,
+                            style:
+                                const TextStyle(
+                              fontSize: 17,
+                              fontWeight:
+                                  FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        if (profile.verified)
+                          const Padding(
+                            padding:
+                                EdgeInsets.only(
+                              left: 6,
+                            ),
+                            child: Icon(
+                              Icons.verified,
+                              size: 15,
+                              color:
+                                  Color(0xFF3298DB),
+                            ),
+                          ),
+                      ],
                     ),
 
                     const SizedBox(height: 6),
@@ -759,45 +785,83 @@ class _ConversationCard extends StatelessWidget {
                             Color(0xFF777777),
                       ),
                     ),
+
+                    const SizedBox(height: 7),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.circle,
+                          size: 8,
+                          color:
+                              Color(0xFF45B96B),
+                        ),
+                        const SizedBox(width: 5),
+                        const Text(
+                          'En ligne',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color:
+                                Color(0xFF45B96B),
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
 
-              if (unreadCount > 0)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 5,
-                  ),
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        const Color(0xFFED1767),
-                    borderRadius:
-                        BorderRadius.circular(
-                      20,
-                    ),
-                  ),
-                  child: Text(
-                    '$unreadCount',
-                    style:
-                        const TextStyle(
-                      color: Colors.white,
-                      fontWeight:
-                          FontWeight.w900,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
+              const SizedBox(width: 5),
 
-              IconButton(
-                onPressed: onMore,
-                icon: const Icon(
-                  Icons.more_vert,
-                  color:
-                      Color(0xFFAAAAAA),
-                ),
+              Column(
+                mainAxisSize:
+                    MainAxisSize.min,
+                children: [
+                  if (unreadCount > 0)
+                    Container(
+                      constraints:
+                          const BoxConstraints(
+                        minWidth: 22,
+                      ),
+                      padding:
+                          const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 4,
+                      ),
+                      decoration:
+                          const BoxDecoration(
+                        color:
+                            Color(0xFFED1767),
+                        shape:
+                            BoxShape.circle,
+                      ),
+                      child: Text(
+                        unreadCount > 99
+                            ? '99+'
+                            : '$unreadCount',
+                        textAlign:
+                            TextAlign.center,
+                        style:
+                            const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight:
+                              FontWeight.w900,
+                        ),
+                      ),
+                    ),
+
+                  IconButton(
+                    onPressed: onMore,
+                    icon: const Icon(
+                      Icons.more_vert,
+                      color:
+                          Color(0xFFAAAAAA),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
