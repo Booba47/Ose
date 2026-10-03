@@ -4,57 +4,89 @@ import 'like_service.dart';
 class MatchService {
   static final Set<String> _matchedProfileIds = {};
 
-  /// Vérifie si un profil est actuellement un match.
-  static bool isMatched(DatingProfile profile) {
+  /// Vérifie si un profil est actuellement en match.
+  static bool isMatched(
+    DatingProfile profile,
+  ) {
     return _matchedProfileIds.contains(profile.id);
   }
 
-  /// Vérifie si l'utilisateur a aimé le profil
-  /// et si un match existe.
-  static bool checkForMatch(DatingProfile profile) {
+  /// Crée un match avec un profil.
+  static Future<bool> createMatch(
+    DatingProfile profile,
+  ) async {
+    final profileId = profile.id.trim();
+
+    if (profileId.isEmpty) {
+      return false;
+    }
+
+    // Un profil doit avoir été aimé avant de pouvoir
+    // devenir un match.
+    if (!LikeService.hasLiked(profile)) {
+      return false;
+    }
+
+    final alreadyMatched =
+        _matchedProfileIds.contains(profileId);
+
+    _matchedProfileIds.add(profileId);
+
+    return !alreadyMatched;
+  }
+
+  /// Vérifie si un like peut aboutir à un match.
+  ///
+  /// Pour l'instant, cette méthode simule la réponse
+  /// de l'autre personne avec les matchs de démonstration.
+  static bool checkForMatch(
+    DatingProfile profile,
+  ) {
     return LikeService.hasLiked(profile) &&
         isMatched(profile);
   }
 
-  /// Crée un match avec un profil.
-  static void createMatch(DatingProfile profile) {
-    _matchedProfileIds.add(profile.id);
-  }
-
   /// Supprime un match.
-  static void removeMatch(DatingProfile profile) {
+  static Future<void> removeMatch(
+    DatingProfile profile,
+  ) async {
     _matchedProfileIds.remove(profile.id);
   }
 
-  /// Retourne les identifiants de tous les matchs.
+  /// Retourne tous les identifiants des matchs.
   static List<String> get matchedProfileIds {
     return List.unmodifiable(
       _matchedProfileIds,
     );
   }
 
-  /// Retourne le nombre de matchs.
+  /// Nombre de matchs.
   static int get matchCount {
     return _matchedProfileIds.length;
   }
 
-  /// Retourne true s'il existe au moins un match.
+  /// Vérifie s'il existe au moins un match.
   static bool get hasMatches {
     return _matchedProfileIds.isNotEmpty;
   }
 
-  /// Réinitialise tous les matchs.
-  static void clear() {
+  /// Vérifie si l'identifiant correspond à un match.
+  static bool isMatchedById(
+    String profileId,
+  ) {
+    return _matchedProfileIds.contains(
+      profileId.trim(),
+    );
+  }
+
+  /// Supprime tous les matchs locaux.
+  static Future<void> clear() async {
     _matchedProfileIds.clear();
   }
 
   /// Initialise les matchs de démonstration.
   ///
-  /// Pour la version actuelle, Sophie et Aïcha
-  /// sont utilisées comme matchs de démonstration.
-  ///
-  /// Cette méthode sera remplacée par les données
-  /// provenant de Firebase lorsque le backend sera connecté.
+  /// À supprimer/remplacer lorsque Firebase sera connecté.
   static void initializeDemoMatches() {
     _matchedProfileIds.addAll([
       'profile_1',
