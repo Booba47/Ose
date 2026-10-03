@@ -3,7 +3,7 @@ class PreferencesService {
   static bool _showOnlineStatus = true;
   static bool _showReadReceipts = true;
 
-  /// Notifications activées ou non.
+  /// Notifications activées ou désactivées.
   static bool get notificationsEnabled {
     return _notificationsEnabled;
   }
@@ -14,7 +14,7 @@ class PreferencesService {
     _notificationsEnabled = value;
   }
 
-  /// Afficher le statut en ligne.
+  /// Afficher ou masquer le statut en ligne.
   static bool get showOnlineStatus {
     return _showOnlineStatus;
   }
@@ -25,7 +25,7 @@ class PreferencesService {
     _showOnlineStatus = value;
   }
 
-  /// Afficher les confirmations de lecture.
+  /// Afficher ou masquer les accusés de lecture.
   static bool get showReadReceipts {
     return _showReadReceipts;
   }
@@ -36,10 +36,45 @@ class PreferencesService {
     _showReadReceipts = value;
   }
 
-  /// Réinitialise les préférences.
+  /// Active toutes les notifications.
+  static Future<void> enableNotifications() async {
+    _notificationsEnabled = true;
+  }
+
+  /// Désactive toutes les notifications.
+  static Future<void> disableNotifications() async {
+    _notificationsEnabled = false;
+  }
+
+  /// Active l'affichage du statut en ligne.
+  static Future<void> enableOnlineStatus() async {
+    _showOnlineStatus = true;
+  }
+
+  /// Désactive l'affichage du statut en ligne.
+  static Future<void> disableOnlineStatus() async {
+    _showOnlineStatus = false;
+  }
+
+  /// Active les accusés de lecture.
+  static Future<void> enableReadReceipts() async {
+    _showReadReceipts = true;
+  }
+
+  /// Désactive les accusés de lecture.
+  static Future<void> disableReadReceipts() async {
+    _showReadReceipts = false;
+  }
+
+  /// Réinitialise toutes les préférences.
   static Future<void> clear() async {
     _notificationsEnabled = true;
     _showOnlineStatus = true;
     _showReadReceipts = true;
+  }
+
+  /// Réinitialise les préférences aux valeurs par défaut.
+  static Future<void> resetToDefaults() async {
+    await clear();
   }
 }
