@@ -1,184 +1,157 @@
 import '../models/chat_message.dart';
 import '../models/dating_profile.dart';
+import 'notification_service.dart';
 
 class MessageService {
-  static final Map<String, List<ChatMessage>> _messages = {
-    'profile_1': [
-      ChatMessage(
-        id: 'message_1',
-        profileId: 'profile_1',
-        text: 'Salut 😊',
-        isMine: false,
-        sentAt: DateTime(2026, 1, 1, 18, 30),
-        isRead: true,
-      ),
-      ChatMessage(
-        id: 'message_2',
-        profileId: 'profile_1',
-        text: 'Content(e) de faire ta connaissance !',
-        isMine: false,
-        sentAt: DateTime(2026, 1, 1, 18, 31),
-        isRead: true,
-      ),
-    ],
-    'profile_3': [
-      ChatMessage(
-        id: 'message_3',
-        profileId: 'profile_3',
-        text: 'Bonjour 😊',
-        isMine: false,
-        sentAt: DateTime(2026, 1, 2, 19, 15),
-        isRead: true,
-      ),
-      ChatMessage(
-        id: 'message_4',
-        profileId: 'profile_3',
-        text: 'Ravie de discuter avec toi !',
-        isMine: false,
-        sentAt: DateTime(2026, 1, 2, 19, 16),
-        isRead: true,
-      ),
-    ],
-  };
+  static final Map<String, List<ChatMessage>> _conversations = {};
 
-  /// Retourne tous les messages d'une conversation.
+  static String _conversationKey(DatingProfile profile) {
+    return profile.id;
+  }
+
+  /// Récupère les messages d'une conversation
   static List<ChatMessage> getMessages(
     DatingProfile profile,
   ) {
-    final messages = _messages[profile.id];
+    final key = _conversationKey(profile);
 
-    if (messages == null) {
-      return const [];
-    }
-
-    return List.unmodifiable(messages);
+    return List.unmodifiable(
+      _conversations[key] ?? [],
+    );
   }
 
-  /// Envoie un message.
-  static Future<bool> sendMessage({
+  /// Envoie un message
+  static Future<void> sendMessage({
     required DatingProfile profile,
     required String message,
   }) async {
     final text = message.trim();
 
     if (text.isEmpty) {
-      return false;
+      return;
     }
 
-    final messages =
-        _messages.putIfAbsent(profile.id, () => []);
+    final key = _conversationKey(profile);
 
-    messages.add(
+    _conversations.putIfAbsent(
+      key,
+      () => [],
+    );
+
+    _conversations[key]!.add(
       ChatMessage(
-        id: 'message_${DateTime.now().microsecondsSinceEpoch}',
-        profileId: profile.id,
+        id: DateTime.now()
+            .millisecondsSinceEpoch
+            .toString(),
         text: text,
-        isMine: true,
         sentAt: DateTime.now(),
+        isMine: true,
         isRead: false,
       ),
     );
 
-    return true;
+    await NotificationService.addNotification(
+      'Message envoyé à ${profile.name}',
+    );
   }
 
-  /// Marque les messages reçus comme lus.
+  /// Ajoute un message reçu (simulation serveur)
+  static Future<void> receiveMessage({
+    required DatingProfile profile,
+    required String message,
+  }) async {
+    final text = message.trim();
+
+    if (text.isEmpty) {
+      return;
+    }
+
+    final key = _conversationKey(profile);
+
+    _conversations.putIfAbsent(
+      key,
+      () => [],
+    );
+
+    _conversations[key]!.add(
+      ChatMessage(
+        id: DateTime.now()
+            .millisecondsSinceEpoch
+            .toString(),
+        text: text,
+        sentAt: DateTime.now(),
+        isMine: false,
+        isRead: false,
+      ),
+    );
+
+    await NotificationService.addNotification(
+      '${profile.name} t’a envoyé un message',
+    );
+  }
+
+  /// Marque les messages comme lus
   static Future<void> markAsRead(
     DatingProfile profile,
   ) async {
-    final messages = _messages[profile.id];
+    final key = _conversationKey(profile);
+
+    final messages = _conversations[key];
 
     if (messages == null) {
       return;
     }
 
-    for (var i = 0; i < messages.length; i++) {
-      final message = messages[i];
-
-      if (!message.isMine && !message.isRead) {
-        messages[i] = message.copyWith(
-          isRead: true,
-        );
+    for (final message in messages) {
+      if (!message.isMine) {
+        message.isRead = true;
       }
     }
   }
 
-  /// Vérifie si une conversation existe.
-  static bool hasConversation(
+  /// Nombre de messages non lus
+  static int unreadCount(
     DatingProfile profile,
   ) {
-    final messages = _messages[profile.id];
+    final messages =
+        _conversations[_conversationKey(profile)] ?? [];
 
-    return messages != null &&
-        messages.isNotEmpty;
+    return messages
+        .where(
+          (message) =>
+              !message.isMine &&
+              !message.isRead,
+        )
+        .length;
   }
 
-  /// Retourne le dernier message.
-  static ChatMessage? getLastMessage(
-    DatingProfile profile,
-  ) {
-    final messages = _messages[profile.id];
-
-    if (messages == null || messages.isEmpty) {
-      return null;
-    }
-
-    return messages.last;
-  }
-
-  /// Nombre de messages dans une conversation.
-  static int getMessageCount(
-    DatingProfile profile,
-  ) {
-    return _messages[profile.id]?.length ?? 0;
-  }
-
-  /// Nombre de messages non lus dans une conversation.
-  static int getUnreadCount(
-    DatingProfile profile,
-  ) {
-    final messages = _messages[profile.id];
-
-    if (messages == null) {
-      return 0;
-    }
-
-    return messages.where(
-      (message) =>
-          !message.isMine &&
-          !message.isRead,
-    ).length;
-  }
-
-  /// Vérifie s'il existe des messages non lus.
-  static bool hasUnreadMessages(
-    DatingProfile profile,
-  ) {
-    return getUnreadCount(profile) > 0;
-  }
-
-  /// Supprime une conversation.
+  /// Supprime une conversation
   static Future<void> deleteConversation(
     DatingProfile profile,
   ) async {
-    _messages.remove(profile.id);
+    _conversations.remove(
+      _conversationKey(profile),
+    );
   }
 
-  /// Supprime toutes les conversations.
+  /// Supprime tous les messages
   static Future<void> clear() async {
-    _messages.clear();
+    _conversations.clear();
   }
 
-  /// Nombre de conversations.
-  static int get conversationCount {
-    return _messages.length;
+  /// Vérifie si une conversation existe
+  static bool hasConversation(
+    DatingProfile profile,
+  ) {
+    return _conversations.containsKey(
+      _conversationKey(profile),
+    );
   }
 
-  /// Nombre total de messages.
-  static int get totalMessageCount {
-    return _messages.values.fold(
-      0,
-      (total, messages) => total + messages.length,
+  /// Retourne toutes les conversations
+  static List<String> get conversationIds {
+    return List.unmodifiable(
+      _conversations.keys,
     );
   }
 }
