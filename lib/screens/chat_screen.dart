@@ -49,13 +49,21 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _markMessagesAsRead() async {
-    await MessageService.markAsRead(widget.profile);
+  await MessageService.markAsRead(
+    widget.profile,
+  );
 
-    if (!mounted) return;
+  await UnreadMessageService.markAsRead(
+    widget.profile,
+  );
 
-    setState(() {
-      _loadMessages();
-    });
+  if (!mounted) {
+    return;
+  }
+
+  setState(() {
+    _loadMessages();
+  });
   }
 
   @override
