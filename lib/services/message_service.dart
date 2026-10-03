@@ -41,22 +41,28 @@ class MessageService {
     ],
   };
 
+  /// Retourne tous les messages d'une conversation.
   static List<ChatMessage> getMessages(
     DatingProfile profile,
   ) {
-    return List.unmodifiable(
-      _messages[profile.id] ?? [],
-    );
+    final messages = _messages[profile.id];
+
+    if (messages == null) {
+      return const [];
+    }
+
+    return List.unmodifiable(messages);
   }
 
-  static Future<void> sendMessage({
+  /// Envoie un message.
+  static Future<bool> sendMessage({
     required DatingProfile profile,
     required String message,
   }) async {
     final text = message.trim();
 
     if (text.isEmpty) {
-      return;
+      return false;
     }
 
     final messages =
@@ -72,8 +78,11 @@ class MessageService {
         isRead: false,
       ),
     );
+
+    return true;
   }
 
+  /// Marque les messages reçus comme lus.
   static Future<void> markAsRead(
     DatingProfile profile,
   ) async {
@@ -94,13 +103,17 @@ class MessageService {
     }
   }
 
+  /// Vérifie si une conversation existe.
   static bool hasConversation(
     DatingProfile profile,
   ) {
     final messages = _messages[profile.id];
-    return messages != null && messages.isNotEmpty;
+
+    return messages != null &&
+        messages.isNotEmpty;
   }
 
+  /// Retourne le dernier message.
   static ChatMessage? getLastMessage(
     DatingProfile profile,
   ) {
@@ -113,16 +126,59 @@ class MessageService {
     return messages.last;
   }
 
+  /// Nombre de messages dans une conversation.
+  static int getMessageCount(
+    DatingProfile profile,
+  ) {
+    return _messages[profile.id]?.length ?? 0;
+  }
+
+  /// Nombre de messages non lus dans une conversation.
+  static int getUnreadCount(
+    DatingProfile profile,
+  ) {
+    final messages = _messages[profile.id];
+
+    if (messages == null) {
+      return 0;
+    }
+
+    return messages.where(
+      (message) =>
+          !message.isMine &&
+          !message.isRead,
+    ).length;
+  }
+
+  /// Vérifie s'il existe des messages non lus.
+  static bool hasUnreadMessages(
+    DatingProfile profile,
+  ) {
+    return getUnreadCount(profile) > 0;
+  }
+
+  /// Supprime une conversation.
   static Future<void> deleteConversation(
     DatingProfile profile,
   ) async {
     _messages.remove(profile.id);
   }
 
+  /// Supprime toutes les conversations.
   static Future<void> clear() async {
     _messages.clear();
   }
 
-  static int get conversationCount =>
-      _messages.length;
+  /// Nombre de conversations.
+  static int get conversationCount {
+    return _messages.length;
+  }
+
+  /// Nombre total de messages.
+  static int get totalMessageCount {
+    return _messages.values.fold(
+      0,
+      (total, messages) => total + messages.length,
+    );
+  }
 }
