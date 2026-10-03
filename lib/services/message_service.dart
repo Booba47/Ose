@@ -20,7 +20,7 @@ class MessageService {
     );
   }
 
-  /// Envoie un message
+  /// Envoyer un message
   static Future<void> sendMessage({
     required DatingProfile profile,
     required String message,
@@ -43,9 +43,10 @@ class MessageService {
         id: DateTime.now()
             .millisecondsSinceEpoch
             .toString(),
+        profileId: profile.id,
         text: text,
-        sentAt: DateTime.now(),
         isMine: true,
+        sentAt: DateTime.now(),
         isRead: false,
       ),
     );
@@ -55,7 +56,8 @@ class MessageService {
     );
   }
 
-  /// Ajoute un message reçu (simulation serveur)
+
+  /// Recevoir un message (simulation serveur)
   static Future<void> receiveMessage({
     required DatingProfile profile,
     required String message,
@@ -78,9 +80,10 @@ class MessageService {
         id: DateTime.now()
             .millisecondsSinceEpoch
             .toString(),
+        profileId: profile.id,
         text: text,
-        sentAt: DateTime.now(),
         isMine: false,
+        sentAt: DateTime.now(),
         isRead: false,
       ),
     );
@@ -90,7 +93,8 @@ class MessageService {
     );
   }
 
-  /// Marque les messages comme lus
+
+  /// Marquer une conversation comme lue
   static Future<void> markAsRead(
     DatingProfile profile,
   ) async {
@@ -102,12 +106,19 @@ class MessageService {
       return;
     }
 
-    for (final message in messages) {
-      if (!message.isMine) {
-        message.isRead = true;
-      }
-    }
+    _conversations[key] = messages.map(
+      (message) {
+        if (!message.isMine && !message.isRead) {
+          return message.copyWith(
+            isRead: true,
+          );
+        }
+
+        return message;
+      },
+    ).toList();
   }
+
 
   /// Nombre de messages non lus
   static int unreadCount(
@@ -116,16 +127,31 @@ class MessageService {
     final messages =
         _conversations[_conversationKey(profile)] ?? [];
 
-    return messages
-        .where(
-          (message) =>
-              !message.isMine &&
-              !message.isRead,
-        )
-        .length;
+    return messages.where(
+      (message) {
+        return !message.isMine &&
+            !message.isRead;
+      },
+    ).length;
   }
 
-  /// Supprime une conversation
+
+  /// Dernier message d'une conversation
+  static ChatMessage? lastMessage(
+    DatingProfile profile,
+  ) {
+    final messages =
+        _conversations[_conversationKey(profile)];
+
+    if (messages == null || messages.isEmpty) {
+      return null;
+    }
+
+    return messages.last;
+  }
+
+
+  /// Supprimer une conversation
   static Future<void> deleteConversation(
     DatingProfile profile,
   ) async {
@@ -134,24 +160,29 @@ class MessageService {
     );
   }
 
-  /// Supprime tous les messages
-  static Future<void> clear() async {
-    _conversations.clear();
-  }
 
-  /// Vérifie si une conversation existe
+  /// Vérifier si une conversation existe
   static bool hasConversation(
     DatingProfile profile,
   ) {
-    return _conversations.containsKey(
-      _conversationKey(profile),
-    );
+    final messages =
+        _conversations[_conversationKey(profile)];
+
+    return messages != null &&
+        messages.isNotEmpty;
   }
 
-  /// Retourne toutes les conversations
+
+  /// Retourne les profils ayant une conversation
   static List<String> get conversationIds {
     return List.unmodifiable(
       _conversations.keys,
     );
+  }
+
+
+  /// Supprimer toutes les conversations
+  static Future<void> clear() async {
+    _conversations.clear();
   }
 }
