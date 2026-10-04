@@ -10,7 +10,7 @@ class MessageService {
   }
 
 
-  /// Récupère les messages d'une conversation
+  /// Récupérer les messages
   static List<ChatMessage> getMessages(
     DatingProfile profile,
   ) {
@@ -20,6 +20,7 @@ class MessageService {
       _conversations[key] ?? [],
     );
   }
+
 
 
   /// Envoyer un message
@@ -36,6 +37,7 @@ class MessageService {
 
 
     final key = _conversationKey(profile);
+
 
     _conversations.putIfAbsent(
       key,
@@ -63,10 +65,10 @@ class MessageService {
 
 
     await NotificationService.addNotification(
-      title: 'Message envoyé',
-      body: 'Message envoyé à ${profile.name}',
+      message: 'Message envoyé à ${profile.name}',
     );
   }
+
 
 
 
@@ -75,7 +77,6 @@ class MessageService {
     required DatingProfile profile,
     required String message,
   }) async {
-
 
     final text = message.trim();
 
@@ -112,17 +113,15 @@ class MessageService {
     );
 
 
-
     await NotificationService.addNotification(
-      title: 'Nouveau message',
-      body: '${profile.name} t’a envoyé un message',
+      message: '${profile.name} t’a envoyé un message',
     );
   }
 
 
 
 
-  /// Marquer une conversation comme lue
+  /// Marquer comme lu
   static Future<void> markAsRead(
     DatingProfile profile,
   ) async {
@@ -149,7 +148,6 @@ class MessageService {
           );
         }
 
-
         return message;
       },
     ).toList();
@@ -158,7 +156,7 @@ class MessageService {
 
 
 
-  /// Nombre de messages non lus
+  /// Compter les messages non lus
   static int unreadCount(
     DatingProfile profile,
   ) {
@@ -201,7 +199,8 @@ class MessageService {
 
 
 
-  /// Compatibilité avec MessagesScreen
+
+  /// Compatibilité MessagesScreen
   static ChatMessage? getLastMessage(
     DatingProfile profile,
   ) {
@@ -225,7 +224,7 @@ class MessageService {
 
 
 
-  /// Vérifier si une conversation existe
+  /// Vérifier une conversation
   static bool hasConversation(
     DatingProfile profile,
   ) {
@@ -241,7 +240,7 @@ class MessageService {
 
 
 
-  /// Liste des conversations
+  /// IDs des conversations
   static List<String> get conversationIds {
 
     return List.unmodifiable(
@@ -252,7 +251,7 @@ class MessageService {
 
 
 
-  /// Tout supprimer
+  /// Tout effacer
   static Future<void> clear() async {
 
     _conversations.clear();
