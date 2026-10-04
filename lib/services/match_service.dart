@@ -4,14 +4,18 @@ import 'like_service.dart';
 class MatchService {
   static final Set<String> _matchedProfileIds = {};
 
-  /// Vérifie si un profil est actuellement en match.
+  /// Vérifie si un profil est déjà un match.
   static bool isMatched(
     DatingProfile profile,
   ) {
     return _matchedProfileIds.contains(profile.id);
   }
 
-  /// Crée un match avec un profil.
+  /// Crée un match pour un profil.
+  ///
+  /// Pour l'instant, le système reste local.
+  /// Il sera ensuite relié au backend pour vérifier
+  /// un véritable like réciproque.
   static Future<bool> createMatch(
     DatingProfile profile,
   ) async {
@@ -21,24 +25,22 @@ class MatchService {
       return false;
     }
 
-    // Un profil doit avoir été aimé avant de pouvoir
-    // devenir un match.
+    // Un match ne peut être créé que si le profil
+    // a déjà été liké par l'utilisateur.
     if (!LikeService.hasLiked(profile)) {
       return false;
     }
 
-    final alreadyMatched =
-        _matchedProfileIds.contains(profileId);
+    if (_matchedProfileIds.contains(profileId)) {
+      return false;
+    }
 
     _matchedProfileIds.add(profileId);
 
-    return !alreadyMatched;
+    return true;
   }
 
-  /// Vérifie si un like peut aboutir à un match.
-  ///
-  /// Pour l'instant, cette méthode simule la réponse
-  /// de l'autre personne avec les matchs de démonstration.
+  /// Vérifie si le profil est à la fois liké et matché.
   static bool checkForMatch(
     DatingProfile profile,
   ) {
@@ -53,11 +55,9 @@ class MatchService {
     _matchedProfileIds.remove(profile.id);
   }
 
-  /// Retourne tous les identifiants des matchs.
+  /// Liste des identifiants des matchs.
   static List<String> get matchedProfileIds {
-    return List.unmodifiable(
-      _matchedProfileIds,
-    );
+    return List.unmodifiable(_matchedProfileIds);
   }
 
   /// Nombre de matchs.
@@ -65,12 +65,12 @@ class MatchService {
     return _matchedProfileIds.length;
   }
 
-  /// Vérifie s'il existe au moins un match.
+  /// Indique s'il existe au moins un match.
   static bool get hasMatches {
     return _matchedProfileIds.isNotEmpty;
   }
 
-  /// Vérifie si l'identifiant correspond à un match.
+  /// Recherche un match par identifiant.
   static bool isMatchedById(
     String profileId,
   ) {
@@ -79,18 +79,19 @@ class MatchService {
     );
   }
 
-  /// Supprime tous les matchs locaux.
-  static Future<void> clear() async {
-    _matchedProfileIds.clear();
-  }
-
   /// Initialise les matchs de démonstration.
   ///
-  /// À supprimer/remplacer lorsque Firebase sera connecté.
+  /// Ces profils servent uniquement au fonctionnement
+  /// de la version locale actuelle.
   static void initializeDemoMatches() {
     _matchedProfileIds.addAll([
       'profile_1',
       'profile_3',
     ]);
   }
-}
+
+  /// Supprime tous les matchs locaux.
+  static Future<void> clear() async {
+    _matchedProfileIds.clear();
+  }
+} 
