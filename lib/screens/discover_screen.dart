@@ -25,11 +25,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void initState() {
     super.initState();
 
-    _loadProfiles();
+    _profiles = [];
 
-    // Quelques matchs de démonstration pour rendre
-    // l'application immédiatement vivante.
     MatchService.initializeDemoMatches();
+
+    _loadProfiles();
   }
 
   void _loadProfiles() {
@@ -41,19 +41,29 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             query: _searchQuery,
           );
 
-    setState(() {
-      _profiles = profiles
-          .where(
-            (profile) => !BlockService.isBlocked(profile),
-          )
-          .toList();
+    final filteredProfiles = profiles.where((profile) {
+      final isBlocked = BlockService.isBlocked(profile);
 
+      final alreadyLiked = LikeService.hasLiked(profile);
+
+      final alreadyPassed = LikeService.hasPassed(profile);
+
+      return !isBlocked &&
+          !alreadyLiked &&
+          !alreadyPassed;
+    }).toList();
+
+    if (!mounted) return;
+
+    setState(() {
+      _profiles = filteredProfiles;
       _currentIndex = 0;
     });
   }
 
   DatingProfile? get _currentProfile {
-    if (_currentIndex >= _profiles.length) {
+    if (_currentIndex < 0 ||
+        _currentIndex >= _profiles.length) {
       return null;
     }
 
@@ -61,50 +71,49 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   void _nextProfile() {
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
-      if (_currentIndex < _profiles.length - 1) {
+      if (_currentIndex < _profiles.length) {
         _currentIndex++;
-      } else {
-        _currentIndex = _profiles.length;
       }
     });
   }
 
-  void _passProfile() {
+  Future<void> _passProfile() async {
     final profile = _currentProfile;
 
-    if (profile == null) {
-      return;
-    }
+    if (profile == null) return;
 
-    LikeService.passProfile(profile);
+    await LikeService.passProfile(profile);
 
     _nextProfile();
   }
 
-  void _likeProfile() {
+  Future<void> _likeProfile() async {
     final profile = _currentProfile;
 
-    if (profile == null) {
-      return;
-    }
+    if (profile == null) return;
 
-    LikeService.likeProfile(profile);
+    await LikeService.likeProfile(profile);
 
+    /*
+     * Dans la version actuelle, les profils de démonstration
+     * initialisés par MatchService sont considérés comme
+     * déjà en correspondance.
+     */
     if (MatchService.isMatched(profile)) {
-      _showMatchDialog(profile);
+      await _showMatchDialog(profile);
       return;
     }
 
     _nextProfile();
   }
 
-  void _showMatchDialog(DatingProfile profile) {
-    showDialog<void>(
+  Future<void> _showMatchDialog(
+    DatingProfile profile,
+  ) async {
+    await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
@@ -208,9 +217,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   void _restartDiscovery() {
-    setState(() {
-      _currentIndex = 0;
-    });
+    _loadProfiles();
   }
 
   void _openSearch() {
@@ -318,7 +325,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         Navigator.pop(context);
 
                         setState(() {
-                          _searchQuery = controller.text.trim();
+                          _searchQuery =
+                              controller.text.trim();
                           _verifiedOnly = verifiedOnly;
                         });
 
@@ -387,11 +395,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     if (_searchQuery.isNotEmpty ||
                         _verifiedOnly)
                       _buildActiveFilter(),
-
                     _buildProfileCard(profile),
-
                     const SizedBox(height: 18),
-
                     _buildActionButtons(),
                   ],
                 ),
@@ -653,7 +658,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  Widget _buildProfileHeader(DatingProfile profile) {
+  Widget _buildProfileHeader(
+    DatingProfile profile,
+  ) {
     return Container(
       height: 310,
       width: double.infinity,
@@ -676,7 +683,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               width: 145,
               height: 145,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.30),
+                color: Colors.white.withValues(
+                  alpha: 0.30,
+                ),
                 shape: BoxShape.circle,
               ),
             ),
@@ -688,8 +697,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               width: 150,
               height: 150,
               decoration: BoxDecoration(
-                color: const Color(0xFFF6A8C7)
-                    .withValues(alpha: 0.25),
+                color: const Color(0xFFF6A8C7).withValues(
+                  alpha: 0.25,
+                ),
                 shape: BoxShape.circle,
               ),
             ),
@@ -703,7 +713,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.10),
+                    color: Colors.black.withValues(
+                      alpha: 0.10,
+                    ),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -728,7 +740,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 vertical: 7,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.92),
+                color: Colors.white.withValues(
+                  alpha: 0.92,
+                ),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
@@ -923,7 +937,9 @@ class _ActionButton extends StatelessWidget {
                       ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: Colors.black.withValues(
+                      alpha: 0.08,
+                    ),
                     blurRadius: 12,
                     offset: const Offset(0, 5),
                   ),
