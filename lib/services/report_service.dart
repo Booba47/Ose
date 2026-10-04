@@ -1,36 +1,8 @@
-class ReportItem {
-  final String id;
-  final String profileId;
-  final String reason;
-  final DateTime createdAt;
-
-  const ReportItem({
-    required this.id,
-    required this.profileId,
-    required this.reason,
-    required this.createdAt,
-  });
-
-  ReportItem copyWith({
-    String? id,
-    String? profileId,
-    String? reason,
-    DateTime? createdAt,
-  }) {
-    return ReportItem(
-      id: id ?? this.id,
-      profileId: profileId ?? this.profileId,
-      reason: reason ?? this.reason,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-}
-
 class ReportService {
-  static final List<ReportItem> _reports = [];
+  static final List<Map<String, String>> _reports = [];
 
-  /// Signale un profil.
-  static Future<bool> reportProfile({
+  /// Enregistre un signalement.
+  static Future<void> reportProfile({
     required String profileId,
     required String reason,
   }) async {
@@ -39,28 +11,29 @@ class ReportService {
 
     if (cleanProfileId.isEmpty ||
         cleanReason.isEmpty) {
-      return false;
+      return;
     }
 
-    final report = ReportItem(
-      id: 'report_${DateTime.now().microsecondsSinceEpoch}',
-      profileId: cleanProfileId,
-      reason: cleanReason,
-      createdAt: DateTime.now(),
-    );
-
-    _reports.insert(0, report);
-
-    return true;
+    _reports.add({
+      'profileId': cleanProfileId,
+      'reason': cleanReason,
+    });
   }
 
-  /// Retourne tous les signalements.
-  static List<ReportItem> get reports {
-    return List.unmodifiable(_reports);
+  /// Tous les signalements locaux.
+  static List<Map<String, String>> get reports {
+    return List.unmodifiable(
+      _reports,
+    );
+  }
+
+  /// Nombre de signalements.
+  static int get reportCount {
+    return _reports.length;
   }
 
   /// Vérifie si un profil a déjà été signalé.
-  static bool hasReportedProfile(
+  static bool hasReported(
     String profileId,
   ) {
     final cleanProfileId = profileId.trim();
@@ -71,50 +44,12 @@ class ReportService {
 
     return _reports.any(
       (report) =>
-          report.profileId == cleanProfileId,
+          report['profileId'] == cleanProfileId,
     );
   }
 
-  /// Retourne les signalements concernant un profil.
-  static List<ReportItem> getReportsForProfile(
-    String profileId,
-  ) {
-    final cleanProfileId = profileId.trim();
-
-    if (cleanProfileId.isEmpty) {
-      return const [];
-    }
-
-    return List.unmodifiable(
-      _reports.where(
-        (report) =>
-            report.profileId == cleanProfileId,
-      ),
-    );
-  }
-
-  /// Retourne le nombre total de signalements.
-  static int get reportCount {
-    return _reports.length;
-  }
-
-  /// Supprime un signalement grâce à son identifiant.
-  static Future<void> removeReport(
-    String reportId,
-  ) async {
-    final cleanId = reportId.trim();
-
-    if (cleanId.isEmpty) {
-      return;
-    }
-
-    _reports.removeWhere(
-      (report) => report.id == cleanId,
-    );
-  }
-
-  /// Supprime tous les signalements concernant un profil.
-  static Future<void> removeReportsForProfile(
+  /// Supprime les signalements d'un profil.
+  static Future<void> clearReportsForProfile(
     String profileId,
   ) async {
     final cleanProfileId = profileId.trim();
@@ -125,12 +60,12 @@ class ReportService {
 
     _reports.removeWhere(
       (report) =>
-          report.profileId == cleanProfileId,
+          report['profileId'] == cleanProfileId,
     );
   }
 
-  /// Supprime tous les signalements.
+  /// Supprime tous les signalements locaux.
   static Future<void> clear() async {
     _reports.clear();
   }
-}
+} 
