@@ -631,3 +631,157 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
+class _MessageBubble extends StatelessWidget {
+  final ChatMessage message;
+  final String time;
+
+  const _MessageBubble({
+    required this.message,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+
+    final isMine = message.isMine;
+
+    return Align(
+      alignment: isMine
+          ? Alignment.centerRight
+          : Alignment.centerLeft,
+
+      child: Container(
+        margin:
+            const EdgeInsets.only(bottom: 12),
+
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 10,
+        ),
+
+        constraints:
+            BoxConstraints(
+          maxWidth:
+              MediaQuery.of(context)
+                      .size
+                      .width *
+                  0.75,
+        ),
+
+        decoration: BoxDecoration(
+
+          color: isMine
+              ? const Color(0xFFED1767)
+              : Colors.white,
+
+          borderRadius:
+              BorderRadius.circular(22),
+
+          boxShadow: const [
+            BoxShadow(
+              color:
+                  Color(0x12000000),
+              blurRadius: 8,
+              offset:
+                  Offset(0,3),
+            ),
+          ],
+        ),
+
+
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.end,
+
+          children: [
+
+            Text(
+              message.text,
+
+              style: TextStyle(
+                color: isMine
+                    ? Colors.white
+                    : Colors.black87,
+
+                fontSize: 15,
+              ),
+            ),
+
+
+            const SizedBox(height:5),
+
+
+            Text(
+              time,
+
+              style: TextStyle(
+                fontSize: 10,
+
+                color: isMine
+                    ? Colors.white70
+                    : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+class _OptionTile extends StatelessWidget {
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final Color color;
+
+
+  const _OptionTile({
+
+    required this.icon,
+    required this.title,
+    required this.onTap,
+
+    this.color =
+        const Color(0xFF555555),
+
+  });
+
+
+  @override
+  Widget build(BuildContext context) {
+
+    return ListTile(
+
+      leading:
+          Icon(
+        icon,
+        color:
+            color,
+      ),
+
+
+      title:
+          Text(
+        title,
+
+        style:
+            TextStyle(
+          color:
+              color,
+
+          fontWeight:
+              FontWeight.w700,
+        ),
+      ),
+
+
+      onTap:
+          onTap,
+    );
+  }
+} 
