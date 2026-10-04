@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/user_profile.dart';
+import '../services/photo_service.dart';
 import '../services/user_service.dart';
 import 'edit_profile_screen.dart';
 import 'manage_photos_screen.dart';
-import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserProfile profile;
@@ -22,59 +22,30 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late UserProfile _profile;
-  bool _isLoading = false;
-
-  static const Color primaryColor = Color(0xFFE6005C);
-  static const Color backgroundColor = Color(0xFFFFF7FA);
 
   @override
   void initState() {
     super.initState();
+
     _profile = widget.profile;
+
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
     final savedProfile = await UserService.getProfile();
 
-    if (!mounted || savedProfile == null) {
-      return;
-    }
-
-    setState(() {
-      _profile = savedProfile;
-    });
-  }
-
-  Future<void> _refreshProfile() async {
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    await _loadProfile();
-
     if (!mounted) return;
 
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  void _openSettings() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SettingsScreen(),
-      ),
-    ).then((_) {
-      _loadProfile();
-    });
+    if (savedProfile != null) {
+      setState(() {
+        _profile = savedProfile;
+      });
+    }
   }
 
   Future<void> _openEditProfile() async {
-    final updatedProfile = await Navigator.push<UserProfile>(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => EditProfileScreen(
@@ -83,17 +54,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (!mounted || updatedProfile == null) {
-      return;
-    }
-
-    setState(() {
-      _profile = updatedProfile;
-    });
+    await _loadProfile();
   }
 
   Future<void> _openManagePhotos() async {
-    final updatedProfile = await Navigator.push<UserProfile>(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ManagePhotosScreen(
@@ -102,22 +67,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (!mounted || updatedProfile == null) {
-      await _loadProfile();
-      return;
-    }
-
-    setState(() {
-      _profile = updatedProfile;
-    });
+    await _loadProfile();
   }
 
-  Widget _buildPhoto(String path) {
-    final isNetworkImage =
-        path.startsWith('http://') ||
-        path.startsWith('https://');
+  Widget _buildPhotoPreview(String path) {
+    final file = File(path);
 
-    if (isNetworkImage) {
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        fit: BoxFit.cover,
+      );
+    }
+
+    if (path.startsWith('http://') ||
+        path.startsWith('https://')) {
       return Image.network(
         path,
         fit: BoxFit.cover,
@@ -127,463 +91,342 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    return Image.file(
-      File(path),
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) {
-        return _buildPhotoPlaceholder();
-      },
-    );
+    return _buildPhotoPlaceholder();
   }
 
   Widget _buildPhotoPlaceholder() {
     return Container(
-      color: const Color(0xFFFFE5EF),
+      color: Colors.pink.shade50,
       child: const Center(
         child: Icon(
           Icons.person,
-          size: 55,
-          color: Color(0xFFC52A70),
+          size: 45,
+          color: Colors.pink,
         ),
       ),
     );
   }
 
-  Widget _buildPhotoGallery() {
-    if (_profile.photos.isEmpty) {
+  Widget _buildMainPhoto() {
+    final photos = _profile.photos;
+
+    if (photos.isEmpty) {
       return GestureDetector(
         onTap: _openManagePhotos,
         child: Container(
-          height: 250,
+          width: double.infinity,
+          height: 280,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 18,
-                offset: const Offset(0, 7),
+            gradient: LinearGradient(
+              colors: [
+                Colors.pink.shade100,
+                Colors.pink.shade50,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add_a_photo_outlined,
+                size: 48,
+                color: Colors.pink,
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Ajouter ma première photo',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.pink,
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                'Une belle photo aide à faire le premier pas ❤️',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.black54,
+                ),
               ),
             ],
-          ),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.add_a_photo_outlined,
-                  size: 58,
-                  color: Color(0xFFE7A5BD),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Ajoute tes premières photos',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF777777),
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'Appuie ici pour commencer',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFFAAAAAA),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       );
     }
 
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Stack(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            height: 280,
+            child: _buildPhotoPreview(photos.first),
+          ),
+          Positioned(
+            left: 16,
+            bottom: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 7,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${photos.length}/6 photos',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              child: InkWell(
+                onTap: _openManagePhotos,
+                borderRadius: BorderRadius.circular(30),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Icon(
+                    Icons.edit,
+                    color: Colors.pink,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoGallery() {
+    final photos = _profile.photos;
+
+    if (photos.length <= 1) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Mes photos',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _openManagePhotos,
+              child: const Text(
+                'Gérer',
+                style: TextStyle(
+                  color: Colors.pink,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
         SizedBox(
-          height: 250,
+          height: 100,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: _profile.photos.length,
-            separatorBuilder: (_, __) {
-              return const SizedBox(width: 12);
-            },
+            itemCount: photos.length,
+            separatorBuilder: (_, __) =>
+                const SizedBox(width: 10),
             itemBuilder: (context, index) {
-              final isPrimary = index == 0;
-
-              return Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(26),
-                    child: SizedBox(
-                      width: 190,
-                      height: 250,
-                      child: _buildPhoto(
-                        _profile.photos[index],
-                      ),
-                    ),
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: _buildPhotoPreview(
+                    photos[index],
                   ),
-
-                  if (isPrimary)
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(
-                            alpha: 0.92,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.star,
-                              size: 15,
-                              color: primaryColor,
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              'Principale',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  Positioned(
-                    bottom: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(
-                          alpha: 0.55,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        '${index + 1}/${_profile.photos.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               );
             },
           ),
         ),
+      ],
+    );
+  }
 
-        const SizedBox(height: 12),
-
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: OutlinedButton.icon(
-            onPressed: _openManagePhotos,
-            icon: const Icon(
-              Icons.photo_library_outlined,
-            ),
-            label: const Text(
-              'Gérer mes photos',
+  Widget _buildProfileInfo() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.pink.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${_profile.name}, ${_profile.age}',
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: _openEditProfile,
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: Colors.pink,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(
+                Icons.location_on_outlined,
+                size: 19,
+                color: Colors.pink,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _profile.city,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_profile.hasBio) ...[
+            const SizedBox(height: 18),
+            const Text(
+              'À propos de moi',
               style: TextStyle(
+                fontSize: 18,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: primaryColor,
-              side: const BorderSide(
-                color: primaryColor,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfileHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        4,
-        8,
-        4,
-        22,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_profile.name}, ${_profile.age}',
-                  style: const TextStyle(
-                    fontSize: 29,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 18,
-                      color: primaryColor,
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        _profile.city,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF777777),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFE5EF),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.favorite,
-              color: primaryColor,
-              size: 23,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(
-    String title,
-    IconData icon,
-  ) {
-    return Row(
-      children: [
-        Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFE5EF),
-            borderRadius: BorderRadius.circular(11),
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: primaryColor,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInterestChip(String interest) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 13,
-        vertical: 9,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFE8F0),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Text(
-        interest,
-        style: const TextStyle(
-          color: Color(0xFFC52A70),
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLookingForCard() {
-    return Container(
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFE5EF),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: const Icon(
-              Icons.favorite_border,
-              color: primaryColor,
-            ),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Text(
-              _profile.lookingFor.isEmpty
-                  ? 'Pas encore renseigné'
-                  : _profile.lookingFor,
+            const SizedBox(height: 8),
+            Text(
+              _profile.bio,
               style: const TextStyle(
                 fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF444444),
+                height: 1.5,
+                color: Colors.black87,
               ),
             ),
-          ),
+          ],
+          if (_profile.interests.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            const Text(
+              'Mes centres d’intérêt',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _profile.interests.map((interest) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.pink.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    interest,
+                    style: const TextStyle(
+                      color: Colors.pink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+          if (_profile.lookingFor.trim().isNotEmpty) ...[
+            const SizedBox(height: 18),
+            const Text(
+              'Je recherche',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _profile.lookingFor,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildStatsCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 18,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildStat(
-              '${_profile.photoCount}',
-              'Photos',
-              Icons.photo_library_outlined,
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 45,
-            color: const Color(0xFFEEEEEE),
-          ),
-          Expanded(
-            child: _buildStat(
-              '${_profile.interests.length}',
-              'Intérêts',
-              Icons.interests_outlined,
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 45,
-            color: const Color(0xFFEEEEEE),
-          ),
-          Expanded(
-            child: _buildStat(
-              _profile.hasBio ? 'Oui' : 'Non',
-              'Bio',
-              Icons.person_outline,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStat(
-    String value,
-    String label,
-    IconData icon,
-  ) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: primaryColor,
-        ),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Color(0xFF888888),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEditButton() {
+  Widget _buildPhotoButton() {
     return SizedBox(
-      height: 55,
-      child: ElevatedButton.icon(
-        onPressed: _openEditProfile,
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _openManagePhotos,
         icon: const Icon(
-          Icons.edit_outlined,
+          Icons.photo_library_outlined,
         ),
-        label: const Text(
-          'Modifier mon profil',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
+        label: Text(
+          _profile.photos.isEmpty
+              ? 'Ajouter mes photos'
+              : 'Gérer mes photos',
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.pink,
+          side: const BorderSide(
+            color: Colors.pink,
           ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
+          padding: const EdgeInsets.symmetric(
+            vertical: 15,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -595,152 +438,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: const Color(0xFFFFF7FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
           'Mon profil',
           style: TextStyle(
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
           ),
         ),
         actions: [
           IconButton(
-            onPressed: _openSettings,
-            tooltip: 'Paramètres',
+            onPressed: _openEditProfile,
             icon: const Icon(
-              Icons.settings_outlined,
+              Icons.edit_outlined,
             ),
+            tooltip: 'Modifier mon profil',
           ),
         ],
       ),
       body: RefreshIndicator(
-        color: primaryColor,
-        onRefresh: _refreshProfile,
+        color: Colors.pink,
+        onRefresh: _loadProfile,
         child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
-            20,
+            16,
             8,
-            20,
-            35,
+            16,
+            30,
           ),
           children: [
+            _buildMainPhoto(),
+
             _buildPhotoGallery(),
 
-            const SizedBox(height: 22),
+            const SizedBox(height: 20),
 
-            _buildProfileHeader(),
+            _buildPhotoButton(),
 
-            _buildStatsCard(),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 25),
+            _buildProfileInfo(),
 
-            if (_profile.hasBio) ...[
-              _buildSectionTitle(
-                'À propos de moi',
-                Icons.person_outline,
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(17),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+            const SizedBox(height: 20),
+
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.pink.shade50,
+                    Colors.purple.shade50,
+                  ],
                 ),
-                child: Text(
-                  _profile.bio,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    height: 1.55,
-                    color: Color(0xFF555555),
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: const Row(
+                children: [
+                  Text(
+                    '💗',
+                    style: TextStyle(
+                      fontSize: 30,
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 25),
-            ],
-
-            _buildSectionTitle(
-              'Mes centres d’intérêt',
-              Icons.auto_awesome_outlined,
-            ),
-
-            const SizedBox(height: 12),
-
-            if (_profile.interests.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(17),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Aucun centre d’intérêt ajouté.',
-                  style: TextStyle(
-                    color: Color(0xFF777777),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Ose faire le premier pas. '
+                      'Ton profil est ta première impression.',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
+                    ),
                   ),
-                ),
-              )
-            else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _profile.interests
-                    .map(_buildInterestChip)
-                    .toList(),
-              ),
-
-            const SizedBox(height: 25),
-
-            _buildSectionTitle(
-              'Je recherche',
-              Icons.favorite_border,
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildLookingForCard(),
-
-            const SizedBox(height: 28),
-
-            _buildEditButton(),
-
-            const SizedBox(height: 12),
-
-            OutlinedButton.icon(
-              onPressed: _openSettings,
-              icon: const Icon(
-                Icons.settings_outlined,
-              ),
-              label: const Text(
-                'Paramètres',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: primaryColor,
-                side: const BorderSide(
-                  color: primaryColor,
-                ),
-                minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            const Center(
-              child: Text(
-                'Ose faire le premier pas. 💕',
-                style: TextStyle(
-                  color: Color(0xFFAAAAAA),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                ],
               ),
             ),
           ],
@@ -748,4 +521,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-}
+} 
