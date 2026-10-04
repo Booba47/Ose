@@ -1,70 +1,92 @@
 class AuthService {
-  /// Indique si un utilisateur est actuellement connecté.
   static bool _isLoggedIn = false;
-
-  /// Identifiant de l'utilisateur actuellement connecté.
   static String? _currentUserId;
+  static String? _currentEmail;
 
-  /// Vérifie si un utilisateur est connecté.
-  static bool get isLoggedIn {
-    return _isLoggedIn;
-  }
+  static bool get isLoggedIn => _isLoggedIn;
 
-  /// Retourne l'identifiant de l'utilisateur connecté.
-  static String? get currentUserId {
-    return _currentUserId;
-  }
+  static String? get currentUserId => _currentUserId;
 
-  /// Connexion temporaire pour la version de démonstration.
+  static String? get currentEmail => _currentEmail;
+
+  /// Connexion locale temporaire.
+  ///
+  /// Cette méthode sera ensuite reliée à Firebase Authentication
+  /// sans avoir besoin de modifier les écrans qui l'utilisent.
   static Future<bool> signIn({
     required String email,
     required String password,
   }) async {
-    if (email.trim().isEmpty || password.isEmpty) {
+    final cleanEmail = email.trim();
+
+    if (cleanEmail.isEmpty || password.isEmpty) {
+      return false;
+    }
+
+    if (password.length < 6) {
       return false;
     }
 
     _isLoggedIn = true;
     _currentUserId = 'demo_user';
+    _currentEmail = cleanEmail;
 
     return true;
   }
 
-  /// Création temporaire d'un compte.
+  /// Création de compte locale temporaire.
+  ///
+  /// Le contrôle de l'âge >= 18 ans reste effectué
+  /// dans l'écran d'inscription.
   static Future<bool> register({
     required String email,
     required String password,
   }) async {
-    if (email.trim().isEmpty || password.length < 6) {
+    final cleanEmail = email.trim();
+
+    if (cleanEmail.isEmpty || password.length < 6) {
       return false;
     }
 
     _isLoggedIn = true;
     _currentUserId = 'demo_user';
+    _currentEmail = cleanEmail;
 
     return true;
   }
 
-  /// Déconnexion temporaire.
+  /// Déconnexion.
   static Future<void> signOut() async {
     _isLoggedIn = false;
     _currentUserId = null;
+    _currentEmail = null;
   }
 
-  /// Réinitialisation temporaire du mot de passe.
+  /// Demande de réinitialisation du mot de passe.
+  ///
+  /// Sera reliée à Firebase Authentication plus tard.
   static Future<bool> resetPassword({
     required String email,
   }) async {
-    if (email.trim().isEmpty) {
+    final cleanEmail = email.trim();
+
+    if (cleanEmail.isEmpty) {
       return false;
     }
 
     return true;
   }
 
-  /// Réinitialise complètement la session de démonstration.
+  /// Réinitialisation complète de la session locale.
   static void clearSession() {
     _isLoggedIn = false;
     _currentUserId = null;
+    _currentEmail = null;
   }
-}
+
+  /// Indique si une adresse e-mail est actuellement enregistrée.
+  static bool get hasEmail {
+    return _currentEmail != null &&
+        _currentEmail!.trim().isNotEmpty;
+  }
+} 
