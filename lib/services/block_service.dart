@@ -16,19 +16,6 @@ class BlockService {
     _blockedProfileIds.add(profileId);
   }
 
-  /// Bloque un profil directement avec son identifiant.
-  static Future<void> blockProfileById(
-    String profileId,
-  ) async {
-    final cleanId = profileId.trim();
-
-    if (cleanId.isEmpty) {
-      return;
-    }
-
-    _blockedProfileIds.add(cleanId);
-  }
-
   /// Débloque un profil.
   static Future<void> unblockProfile(
     DatingProfile profile,
@@ -36,30 +23,29 @@ class BlockService {
     _blockedProfileIds.remove(profile.id);
   }
 
-  /// Débloque un profil avec son identifiant.
-  static Future<void> unblockProfileById(
-    String profileId,
-  ) async {
-    _blockedProfileIds.remove(profileId.trim());
-  }
-
   /// Vérifie si un profil est bloqué.
   static bool isBlocked(
     DatingProfile profile,
   ) {
-    return _blockedProfileIds.contains(profile.id);
-  }
-
-  /// Vérifie si un identifiant est bloqué.
-  static bool isBlockedById(
-    String profileId,
-  ) {
     return _blockedProfileIds.contains(
-      profileId.trim(),
+      profile.id,
     );
   }
 
-  /// Retourne tous les identifiants bloqués.
+  /// Vérifie un blocage à partir d'un identifiant.
+  static bool isBlockedById(
+    String profileId,
+  ) {
+    final cleanId = profileId.trim();
+
+    if (cleanId.isEmpty) {
+      return false;
+    }
+
+    return _blockedProfileIds.contains(cleanId);
+  }
+
+  /// Liste des profils bloqués.
   static List<String> get blockedProfileIds {
     return List.unmodifiable(
       _blockedProfileIds,
@@ -76,8 +62,8 @@ class BlockService {
     return _blockedProfileIds.isNotEmpty;
   }
 
-  /// Retire tous les blocages.
+  /// Supprime tous les blocages locaux.
   static Future<void> clear() async {
     _blockedProfileIds.clear();
   }
-}
+} 
