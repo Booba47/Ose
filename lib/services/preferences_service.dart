@@ -3,7 +3,7 @@ class PreferencesService {
   static bool _showOnlineStatus = true;
   static bool _showReadReceipts = true;
 
-  /// Notifications activées ou désactivées.
+  /// Notifications activées ou non.
   static bool get notificationsEnabled {
     return _notificationsEnabled;
   }
@@ -14,7 +14,7 @@ class PreferencesService {
     _notificationsEnabled = value;
   }
 
-  /// Afficher ou masquer le statut en ligne.
+  /// Affichage du statut en ligne.
   static bool get showOnlineStatus {
     return _showOnlineStatus;
   }
@@ -25,7 +25,7 @@ class PreferencesService {
     _showOnlineStatus = value;
   }
 
-  /// Afficher ou masquer les accusés de lecture.
+  /// Affichage des accusés de lecture.
   static bool get showReadReceipts {
     return _showReadReceipts;
   }
@@ -36,34 +36,19 @@ class PreferencesService {
     _showReadReceipts = value;
   }
 
-  /// Active toutes les notifications.
-  static Future<void> enableNotifications() async {
-    _notificationsEnabled = true;
+  /// Active/désactive les notifications.
+  static Future<void> toggleNotifications() async {
+    _notificationsEnabled = !_notificationsEnabled;
   }
 
-  /// Désactive toutes les notifications.
-  static Future<void> disableNotifications() async {
-    _notificationsEnabled = false;
+  /// Active/désactive le statut en ligne.
+  static Future<void> toggleOnlineStatus() async {
+    _showOnlineStatus = !_showOnlineStatus;
   }
 
-  /// Active l'affichage du statut en ligne.
-  static Future<void> enableOnlineStatus() async {
-    _showOnlineStatus = true;
-  }
-
-  /// Désactive l'affichage du statut en ligne.
-  static Future<void> disableOnlineStatus() async {
-    _showOnlineStatus = false;
-  }
-
-  /// Active les accusés de lecture.
-  static Future<void> enableReadReceipts() async {
-    _showReadReceipts = true;
-  }
-
-  /// Désactive les accusés de lecture.
-  static Future<void> disableReadReceipts() async {
-    _showReadReceipts = false;
+  /// Active/désactive les accusés de lecture.
+  static Future<void> toggleReadReceipts() async {
+    _showReadReceipts = !_showReadReceipts;
   }
 
   /// Réinitialise toutes les préférences.
@@ -72,9 +57,4 @@ class PreferencesService {
     _showOnlineStatus = true;
     _showReadReceipts = true;
   }
-
-  /// Réinitialise les préférences aux valeurs par défaut.
-  static Future<void> resetToDefaults() async {
-    await clear();
-  }
-}
+} 
